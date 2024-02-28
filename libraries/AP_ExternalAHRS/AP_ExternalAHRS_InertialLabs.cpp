@@ -99,7 +99,7 @@ AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_fro
                         uint16_t(AP_ExternalAHRS::AvailableSensor::IMU) |
                         uint16_t(AP_ExternalAHRS::AvailableSensor::BARO) |
                         uint16_t(AP_ExternalAHRS::AvailableSensor::COMPASS));
-    
+
     if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_InertialLabs::update_thread, void), "ILabs", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
         AP_HAL::panic("InertialLabs Failed to start ExternalAHRS update thread");
     }
@@ -268,7 +268,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
         case MessageType::ACCEL_DATA_HR: {
             CHECK_SIZE(u.accel_data_hr);
-            ins_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*9.8106f*1.0e-6;      
+            ins_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*9.8106f*1.0e-6;
             break;
         }
         case MessageType::GYRO_DATA_HR: {
@@ -598,7 +598,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: TimeUS: Time since system startup
         // @Field: GpsYaw: GNSS Heading
         // @Field: GpsPitch: GNSS Pitch
-        // @Field: GpsHTS: GNSS Heading timestamp        
+        // @Field: GpsHTS: GNSS Heading timestamp
         // @Field: GpsAType: GNSS Angles position type
         // @Field: GDOP: GNSS GDOP
         // @Field: PDOP: GNSS PDOP
@@ -616,7 +616,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     state2.gnss_gdop * 1.0e-2, state2.gnss_pdop * 1.0e-2, gps_data.hdop * 1.0e-2,
                                     gps_data.vdop * 1.0e-2, state2.gnss_tdop * 1.0e-2);
     }
-        
+
     return true;
 }
 
@@ -765,4 +765,3 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
-
