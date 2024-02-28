@@ -211,4 +211,3 @@ namespace AP {
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
-
