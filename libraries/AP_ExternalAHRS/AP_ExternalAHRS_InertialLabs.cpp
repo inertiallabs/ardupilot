@@ -764,4 +764,9 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
                                        mag_var, 0, 0);
 }
 
+void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
+{
+    uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
+}
+
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
