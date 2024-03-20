@@ -118,6 +118,7 @@ public:
     bool get_gyro(Vector3f &gyro);
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
+    void write_bytes(const char *bytes, uint8_t len);
 
     // update backend
     void update();
