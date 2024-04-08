@@ -222,6 +222,7 @@ private:
     } message_lengths[];
 
     struct {
+        float baro_alt;
         Vector3f kf_vel_covariance;
         Vector3f kf_pos_covariance;
         uint16_t unit_status;
@@ -234,21 +235,21 @@ private:
     } state2;
 
     struct {
-        float gnss_lat;
-        float gnss_lon;
-        float gnss_alt;
-        float ned_vel_north;
-        float ned_vel_east;
-        float ned_vel_down;
-        uint32_t gnss_pos_timestamp;
-        gnss_extended_info_t gnss_extended_info;
-        gnss_info_short_t gnss_info_short;
-        uint8_t gnss_new_data;
-        uint8_t gnss_jam_status;        
-        float gnss_heading;
-        float gnss_pitch;
-        uint8_t gnss_angle_pos_type;
-        uint32_t gnss_heading_timestamp;
+        float lat;
+        float lng;
+        float alt;
+        float hor_speed;
+        float ver_speed;
+        float track_over_ground;
+        uint8_t new_data;
+        uint32_t pos_timestamp;
+        uint32_t heading_timestamp;
+        uint8_t spoof_status;
+        uint8_t jam_status;
+        uint8_t angle_pos_type;
+        gnss_info_short_t info_short;
+        float heading;
+        float pitch;
         float gdop;
         float pdop;
         float tdop;
