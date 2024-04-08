@@ -300,10 +300,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
         case MessageType::VELOCITIES: {
             CHECK_SIZE(u.velocity);
-            state.velocity = u.velocity.tofloat().rfu_to_frd()*0.01; // m/s
-            nav_ins_data.ned_vel_north = state.velocity.x;
-            nav_ins_data.ned_vel_east = state.velocity.y;
-            nav_ins_data.ned_vel_down = state.velocity.z;
+            state.velocity = u.velocity.tofloat().rfu_to_frd()*0.01;
+            nav_ins_data.ned_vel_north = state.velocity.x; // m/s
+            nav_ins_data.ned_vel_east = state.velocity.y; // m/s
+            nav_ins_data.ned_vel_down = state.velocity.z; // m/s
             state.have_velocity = true;
             last_vel_ms = now_ms;
             break;
