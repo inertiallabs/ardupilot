@@ -688,24 +688,24 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     state2.unit_status, state2.unit_status2,
                                     state2.supply_voltage);
 
-        // // @LoggerMessage: ILB8
-        // // @Description: InertialLabs AHRS data8
-        // // @Field: TimeUS: Time since system startup
-        // // @Field: GMS: GPS INS time (round)
-        // // @Field: PVN: position variance north
-        // // @Field: PVE: position variance east
-        // // @Field: PVD: position variance down
-        // // @Field: VVN: velocity variance north
-        // // @Field: VVE: velocity variance east
-        // // @Field: VVD: velocity variance down
+        // @LoggerMessage: ILB8
+        // @Description: InertialLabs AHRS data8
+        // @Field: TimeUS: Time since system startup
+        // @Field: GMS: GPS INS time (round)
+        // @Field: PVN: position variance north
+        // @Field: PVE: position variance east
+        // @Field: PVD: position variance down
+        // @Field: VVN: velocity variance north
+        // @Field: VVE: velocity variance east
+        // @Field: VVD: velocity variance down
 
-        // AP::logger().WriteStreaming("ILB8", "TimeUS,GMS,PVN,PVE,PVD,VVN,VVE,VVD",
-        //                             "s-mmmnnn",
-        //                             "F-------",
-        //                             "QIffffff",
-        //                             now_us, nav_ins_data.ms_tow,
-        //                             state2.kf_pos_covariance.x, state2.kf_pos_covariance.y, state2.kf_pos_covariance.z,
-        //                             state2.kf_vel_covariance.x, state2.kf_vel_covariance.y, state2.kf_vel_covariance.z);
+        AP::logger().WriteStreaming("ILB8", "TimeUS,GMS,PVN,PVE,PVD,VVN,VVE,VVD",
+                                    "s-mmmnnn",
+                                    "F-------",
+                                    "QIffffff",
+                                    now_us, nav_ins_data.ms_tow,
+                                    state2.kf_pos_covariance.x, state2.kf_pos_covariance.y, state2.kf_pos_covariance.z,
+                                    state2.kf_vel_covariance.x, state2.kf_vel_covariance.y, state2.kf_vel_covariance.z);
     }
         
     return true;
