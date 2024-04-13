@@ -129,6 +129,7 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
+        float baro_alt;
     } baro_data_message_t;
 
     typedef struct {
