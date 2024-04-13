@@ -573,7 +573,7 @@ public:
     AP_Int32        oneshot_mask;
     
     AP_Int8         axis_bitmask; // axes to be autotuned
-    AP_Int8         inertiallabs_bitmask; // inertiallabs to be set to use
+ //   AP_Int8         inertiallabs_bitmask; // inertiallabs to be set to use
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

@@ -1249,12 +1249,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
-    // @Param: INERTIAL_LABS
-    // @DisplayName: Inertiallabs bitmask
-    // @Description: Set InertialLabs param
-    // @Bitmask: 0:Baro,1:Wind,2:Int_EKF
-    // @User: Standard
-    AP_GROUPINFO("INERTIAL_LABS", 36, ParametersG2, inertiallabs_bitmask, 0),
+//    // @Param: INERTIAL_LABS
+//    // @DisplayName: Inertiallabs bitmask
+//    // @Description: Set InertialLabs param
+//    // @Bitmask: 0:Baro,1:Wind,2:Int_EKF
+//    // @User: Standard
+//    AP_GROUPINFO("INERTIAL_LABS", 36, ParametersG2, inertiallabs_bitmask, 0),
 
     AP_GROUPEND
 };
