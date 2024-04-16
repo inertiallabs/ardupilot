@@ -172,7 +172,10 @@ public:
 protected:
 
     enum class OPTIONS {
-        VN_UNCOMP_IMU = 1U << 0,
+        VN_UNCOMP_IMU = (1U << 0),
+        ILAB_ENABLE_CLB = (1U << 1), // Enable InertialLabs INS compass, accelerometer and gyro calibration
+        ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
+        ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
     };
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }
 
