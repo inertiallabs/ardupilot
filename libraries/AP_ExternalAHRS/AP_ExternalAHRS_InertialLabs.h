@@ -255,6 +255,14 @@ private:
         float tdop;
     } gnss_data;
 
+    uint16_t last_unit_status;
+    uint16_t last_unit_status2;
+    uint16_t last_air_data_status;
+    uint8_t last_spoof_status;
+    uint8_t last_jam_status;
+
+    uint32_t last_critical_msg_ms;
+
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
     uint32_t last_pos_ms;
