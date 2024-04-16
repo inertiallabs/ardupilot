@@ -10,5 +10,6 @@
         "chiehyu.vscode-astyle",
         "ardupilot-org.ardupilot-devenv",
         "marus25.cortex-debug",
+        "mcu-debug.memory-view",
     ]
 }
