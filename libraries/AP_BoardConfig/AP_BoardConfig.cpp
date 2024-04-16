@@ -296,7 +296,7 @@ const AP_Param::GroupInfo AP_BoardConfig::var_info[] = {
     // @Param: BOOT_DELAY
     // @DisplayName: Boot delay
     // @Description: This adds a delay in milliseconds to boot to ensure peripherals initialise fully
-    // @Range: 0 10000
+    // @Range: 0 60000
     // @Units: ms
     // @User: Advanced
     AP_GROUPINFO("BOOT_DELAY", 20, AP_BoardConfig, _boot_delay_ms, HAL_DEFAULT_BOOT_DELAY),
