@@ -57,7 +57,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: AHRS type
     // @Description: Type of AHRS device
-    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,7:MicroStrain7
+    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:Inertial_Labs,7:MicroStrain7
     // @User: Standard
     AP_GROUPINFO_FLAGS("_TYPE", 1, AP_ExternalAHRS, devtype, HAL_EXTERNAL_AHRS_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
@@ -88,6 +88,13 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Units: Hz
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
+
+    // @Param: _INL_MODE
+    // @DisplayName: InertialLabs modes
+    // @Description: External AHRS modes if InertialLabs defined 
+    // @Bitmask: 0:VectorNav_opt,1:ILAB_enable_clb,2:ILAB_use_baro_alt,3:ILAB_use_airspeed_wind_est
+    // @User: Advanced
+    AP_GROUPINFO("_INL_MODE", 6, AP_ExternalAHRS, inl_modes, 0x0),   
     
     AP_GROUPEND
 };

@@ -185,6 +185,7 @@ private:
     AP_Int16         log_rate;
     AP_Int16         options;
     AP_Int16         sensors;
+    AP_Int8          inl_modes; //New InertialLabs config 04/17/2024
 
     static AP_ExternalAHRS *_singleton;
 

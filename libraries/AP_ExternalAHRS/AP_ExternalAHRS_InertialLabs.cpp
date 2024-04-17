@@ -251,7 +251,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ILabsData &u = *(ILabsData*)message_ofs;
         uint8_t msg_len = 0;
 
-        msg_types.set(unsigned(mtype));
+         msg_types.set(unsigned(mtype));
 
         switch (mtype) {
         case MessageType::GPS_INS_TIME_MS: {
