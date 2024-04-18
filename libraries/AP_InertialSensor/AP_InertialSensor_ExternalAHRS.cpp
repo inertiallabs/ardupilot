@@ -68,4 +68,3 @@ bool AP_InertialSensor_ExternalAHRS::get_output_banner(char* banner, uint8_t ban
 }
 
 #endif // HAL_EXTERNAL_AHRS_ENABLED
-
