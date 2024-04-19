@@ -12,7 +12,7 @@ AP_Baro_ExternalAHRS::AP_Baro_ExternalAHRS(AP_Baro &baro, uint8_t port) :
 // Read the sensor
 void AP_Baro_ExternalAHRS::update(void)
 {
-    if (count) {
+     if (count) {
         WITH_SEMAPHORE(_sem);
         _copy_to_frontend(instance, sum_pressure/count, sum_temp/count);
         sum_pressure = sum_temp = 0;

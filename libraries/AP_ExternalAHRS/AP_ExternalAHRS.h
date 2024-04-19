@@ -82,6 +82,12 @@ public:
         COMPASS = (1U<<3),
     };
 
+    enum class Option_INL {     //AVK 04/18/2024
+        ilab_clb    =    (1U<<1),
+        ilab_alt    =    (1U<<2),
+        ilab_airspeed =  (1U<<3),
+       };
+
     // get serial port number, -1 for not enabled
     int8_t get_port(AvailableSensor sensor) const;
 
@@ -129,7 +135,7 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
-        float baro_alt;
+        float baro_alt; //add AVK
     } baro_data_message_t;
 
     typedef struct {
@@ -169,6 +175,8 @@ public:
     void set_gnss_disable(bool disable) {
         gnss_is_disabled = disable;
     }
+
+    uint8_t get_inl(void) {return inl_modes;} //AVK 18/04/2024
 
 protected:
 
