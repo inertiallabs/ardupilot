@@ -979,7 +979,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no jamming");
         }
 
-        if (gnss_data.jam_status == 2) {
+        if (gnss_data.jam_status == 2 && last_jam_status == 3) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS jamming indicated but fix ok");
         }
 
