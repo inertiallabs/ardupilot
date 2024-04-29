@@ -82,12 +82,6 @@ public:
         COMPASS = (1U<<3),
     };
 
-    enum class Option_INL {     //AVK 04/18/2024
-        ilab_clb    =    (1U<<1),
-        ilab_alt    =    (1U<<2),
-        ilab_airspeed =  (1U<<3),
-       };
-
     // get serial port number, -1 for not enabled
     int8_t get_port(AvailableSensor sensor) const;
 
@@ -124,6 +118,7 @@ public:
     bool get_gyro(Vector3f &gyro);
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
+    void write_bytes(const char *bytes, uint8_t len);
 
     // update backend
     void update();
@@ -135,7 +130,6 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
-        float baro_alt; //add AVK
     } baro_data_message_t;
 
     typedef struct {
@@ -176,12 +170,13 @@ public:
         gnss_is_disabled = disable;
     }
 
-    uint8_t get_inl(void) {return inl_modes;} //AVK 18/04/2024
-
 protected:
 
     enum class OPTIONS {
-        VN_UNCOMP_IMU = 1U << 0,
+        VN_UNCOMP_IMU = (1U << 0),
+        ILAB_ENABLE_CLB = (1U << 1), // Enable InertialLabs INS compass, accelerometer and gyro calibration
+        ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
+        ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
     };
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }
 
@@ -193,7 +188,6 @@ private:
     AP_Int16         log_rate;
     AP_Int16         options;
     AP_Int16         sensors;
-    AP_Int8          inl_modes; //New InertialLabs config 04/17/2024
 
     static AP_ExternalAHRS *_singleton;
 
@@ -218,4 +212,3 @@ namespace AP {
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
-
