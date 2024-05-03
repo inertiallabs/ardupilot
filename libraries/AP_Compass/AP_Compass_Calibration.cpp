@@ -202,6 +202,26 @@ bool Compass::_accept_calibration(uint8_t i)
         Vector3f ofs(cal_report.ofs), diag(cal_report.diag), offdiag(cal_report.offdiag);
         float scale_factor = cal_report.scale_factor;
 
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        StateIndex id = _get_state_id(prio);
+        if (id < COMPASS_MAX_INSTANCES &&
+            _state[id].external &&
+            AP_ExternalAHRS::get_singleton())
+        {
+            set_and_save_offsets(i, Vector3f());
+#if AP_COMPASS_DIAGONALS_ENABLED
+            set_and_save_diagonals(i, Vector3f());
+            set_and_save_offdiagonals(i, Vector3f());
+#endif
+            set_and_save_scale_factor(i, 1);
+            if (!is_calibrating()) {
+                AP_Notify::events.compass_cal_saved = 1;
+            }
+            return true;
+        }
+#endif
+
         set_and_save_offsets(i, ofs);
 #if AP_COMPASS_DIAGONALS_ENABLED
         set_and_save_diagonals(i,diag);

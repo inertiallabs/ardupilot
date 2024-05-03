@@ -694,6 +694,11 @@ AP_InertialSensor::AP_InertialSensor() :
     _board_orientation(ROTATION_NONE),
     _log_raw_bit(-1)
 {
+    for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); i++) {
+        saved_accel_id[i] = 0;
+        saved_gyro_id[i] = 0;
+    }
+
     if (_singleton) {
         AP_HAL::panic("Too many inertial sensors");
     }
@@ -727,7 +732,7 @@ AP_InertialSensor *AP_InertialSensor::get_singleton()
 /*
   register a new gyro instance
  */
-bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
+bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs)
 {
     if (_gyro_count == INS_MAX_INSTANCES) {
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register gyro id %u", unsigned(id));
@@ -754,6 +759,23 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
     }
 
     _gyro_id(_gyro_count).set((int32_t) id);
+
+    if (isExternalAhrs)
+    {
+        _gyro_offset(_gyro_count).set_and_save(Vector3f());
+        _gyro_id(_gyro_count).save();
+        _gyro_cal_ok[_gyro_count] = true;
+    }
+
+    // check have we got this id in eeprom and load the coefficients for this from memory
+    for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); ++i) {
+        if (id == saved_gyro_id[i]) {
+            _gyro_offset(_gyro_count).set_and_save(saved_gyro_offsets[i]);
+            _gyro_id(_gyro_count).save();
+            _gyro_cal_ok[_gyro_count] = true;
+            break;
+        }
+    }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     if (!saved) {
@@ -795,7 +817,7 @@ bool AP_InertialSensor::get_gyro_instance(uint8_t &instance) const
 /*
   register a new accel instance
  */
-bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
+bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs)
 {
     if (_accel_count == INS_MAX_INSTANCES) {
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register accel id %u", unsigned(id));
@@ -827,6 +849,27 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
     }
 
     _accel_id(_accel_count).set((int32_t) id);
+
+    if (isExternalAhrs)
+    {
+        _accel_scale(_accel_count).set_and_save(Vector3f(1, 1, 1));
+        _accel_offset(_accel_count).set_and_save(Vector3f());
+        _accel_pos(_accel_count).set_and_save(Vector3f());
+        _accel_id(_accel_count).save();
+        _accel_id_ok[_accel_count] = true;
+    }
+
+    // check have we got this id in eeprom and load the coefficients for this from memory
+    for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); ++i) {
+        if (id == saved_accel_id[i]) {
+            _accel_scale(_accel_count).set_and_save(saved_accel_scale[i]);
+            _accel_offset(_accel_count).set_and_save(saved_accel_offsets[i]);
+            _accel_pos(_accel_count).set_and_save(saved_accel_pos[i]);
+            _accel_id(_accel_count).save();
+            _accel_id_ok[_accel_count] = true;
+            break;
+        }
+    }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL || (CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS && AP_SIM_ENABLED)
         // assume this is the same sensor and save its ID to allow seamless
@@ -926,6 +969,17 @@ bool AP_InertialSensor::has_fft_notch() const
 void
 AP_InertialSensor::init(uint16_t loop_rate)
 {
+    // save existing accel offsets
+    for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); ++i) {
+        saved_accel_id[i] = _accel_id(i);
+        saved_accel_scale[i] = _accel_scale(i);
+        saved_accel_offsets[i] = _accel_offset(i);
+        saved_accel_pos[i] = _accel_pos(i);
+
+        saved_gyro_id[i] = _gyro_id(i);
+        saved_gyro_offsets[i] = _gyro_offset(i);
+    }
+
     // remember the sample rate
     _loop_rate = loop_rate;
     _loop_delta_t = 1.0f / loop_rate;
@@ -1559,6 +1613,16 @@ bool AP_InertialSensor::accel_calibrated_ok_all() const
         if (!_accel_id_ok[i]) {
             return false;
         }
+
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        if (AP_ExternalAHRS::get_singleton() &&
+            _external_ahrs_accel_index == i)
+        {
+            continue;
+        }
+#endif
+
         // exactly 0.0 offset is extremely unlikely
         if (_accel_offset(i).get().is_zero()) {
             return false;
@@ -1731,6 +1795,16 @@ AP_InertialSensor::_init_gyro()
     // found so far
     DEV_PRINTF("\n");
     for (uint8_t k=0; k<num_gyros; k++) {
+
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        if (AP_ExternalAHRS::get_singleton() &&
+            _external_ahrs_gyro_index == k)
+        {
+            _gyro_offset(k).set_and_save(Vector3f());
+            continue;
+        }
+#endif
         if (!converged[k]) {
             DEV_PRINTF("gyro[%u] did not converge: diff=%f dps (expected < %f)\n",
                                 (unsigned)k,
@@ -2288,6 +2362,18 @@ void AP_InertialSensor::_acal_save_calibrations()
 {
     Vector3f bias, gain;
     for (uint8_t i=0; i<_accel_count; i++) {
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        if (AP_ExternalAHRS::get_singleton() &&
+            _external_ahrs_accel_index == i)
+        {
+            _accel_offset(i).set_and_save(Vector3f());
+            _accel_scale(i).set_and_save(Vector3f(1, 1, 1));
+            _accel_id(i).save();
+            _accel_id_ok[i] = true;
+            continue;
+        }
+#endif
         if (_accel_calibrator[i].get_status() == ACCEL_CAL_SUCCESS) {
             _accel_calibrator[i].get_calibration(bias, gain);
             _accel_offset(i).set_and_save(bias);
@@ -2558,6 +2644,19 @@ MAV_RESULT AP_InertialSensor::simple_accel_cal()
     if (result == MAV_RESULT_ACCEPTED) {
         DEV_PRINTF("\nPASSED\n");
         for (uint8_t k=0; k<num_accels; k++) {
+#if HAL_EXTERNAL_AHRS_ENABLED
+            // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+            if (AP_ExternalAHRS::get_singleton() &&
+                _external_ahrs_accel_index == k)
+            {
+                _accel_offset(k).set_and_save(Vector3f());
+                _accel_scale(k).set_and_save(Vector3f(1, 1, 1));
+                _accel_id(k).save();
+                _accel_id_ok[k] = true;
+                continue;
+            }
+#endif
+
             // remove rotated gravity
             new_accel_offset[k] -= rotated_gravity;
             _accel_offset(k).set_and_save(new_accel_offset[k]);
