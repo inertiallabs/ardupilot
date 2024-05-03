@@ -1486,6 +1486,13 @@ bool AP_InertialSensor::gyros_consistent(uint8_t threshold) const
     }
 
     const Vector3f &prime_gyro_vec = get_gyro();
+
+    // Dirty hack skip consistent check if external AHRS is the main
+    if (get_gyro(_external_ahrs_gyro_index) == prime_gyro_vec)
+    {
+        return true;
+    }
+
     for(uint8_t i=0; i<gyro_count; i++) {
         if (!use_gyro(i)) {
             continue;
@@ -1552,6 +1559,13 @@ bool AP_InertialSensor::accels_consistent(float accel_error_threshold) const
     }
 
     const Vector3f &prime_accel_vec = get_accel();
+
+    // Dirty hack skip consistent check if external AHRS is the main
+    if (get_accel(_external_ahrs_gyro_index) == prime_accel_vec)
+    {
+        return true;
+    }
+
     for(uint8_t i=0; i<accel_count; i++) {
         if (!use_accel(i)) {
             continue;
