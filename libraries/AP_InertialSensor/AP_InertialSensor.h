@@ -81,8 +81,8 @@ public:
 
     /// Register a new gyro/accel driver, allocating an instance
     /// number
-    bool register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
-    bool register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
+    bool register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs = false);
+    bool register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs = false);
 
     // a function called by the main thread at the main loop rate:
     void periodic();
@@ -569,6 +569,15 @@ private:
     // accelerometer position offset in body frame
     AP_Vector3f _accel_pos_old_param[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
 
+    // for saved params from previous calibrations
+    uint32_t saved_accel_id[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_scale[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_offsets[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_pos[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+
+    uint32_t saved_gyro_id[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_gyro_offsets[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+
     // Use Accessor methods to access above variables
 #if INS_AUX_INSTANCES
     #define INS_PARAM_WRAPPER(var) \
@@ -657,6 +666,9 @@ private:
     // primary accel and gyro
     uint8_t _primary_gyro;
     uint8_t _primary_accel;
+
+    int16_t _external_ahrs_gyro_index {-1};
+    int16_t _external_ahrs_accel_index {-1};
 
     // mask of accels and gyros which we will be actively using
     // and this should wait for in wait_for_sample()

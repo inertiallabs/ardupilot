@@ -13,6 +13,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <AP_HAL/AP_HAL.h>
 #include "AP_Compass_ExternalAHRS.h"
 
@@ -25,6 +26,12 @@ AP_Compass_ExternalAHRS::AP_Compass_ExternalAHRS(uint8_t port)
 
     set_dev_id(instance, devid);
     set_external(instance, true);
+
+    // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+    if (AP_ExternalAHRS::get_singleton())
+    {
+        save_dev_id(instance);
+    }
 }
 
 void AP_Compass_ExternalAHRS::handle_external(const AP_ExternalAHRS::mag_data_message_t &pkt)

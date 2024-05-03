@@ -33,7 +33,7 @@
 
 extern const AP_HAL::HAL &hal;
 
-AP_ExternalAHRS *AP_ExternalAHRS::_singleton;
+AP_ExternalAHRS *AP_ExternalAHRS::_singleton{nullptr};
 
 // constructor
 AP_ExternalAHRS::AP_ExternalAHRS()
