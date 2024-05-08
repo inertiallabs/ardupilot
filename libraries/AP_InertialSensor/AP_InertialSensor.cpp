@@ -756,6 +756,9 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
     {
         _gyro_offset(_gyro_count).set_and_save(Vector3f());
         _gyro_id(_gyro_count).save();
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        caltemp_gyro(_accel_count).set_and_save(-300);
+#endif
         _gyro_cal_ok[_gyro_count] = true;
     }
 
@@ -840,6 +843,9 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
         _accel_offset(_accel_count).set_and_save(Vector3f());
         _accel_pos(_accel_count).set_and_save(Vector3f());
         _accel_id(_accel_count).save();
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        caltemp_accel(_accel_count).set_and_save(-300);
+#endif
         _accel_id_ok[_accel_count] = true;
     }
 
@@ -1868,6 +1874,9 @@ AP_InertialSensor::_init_gyro()
             _external_ahrs_gyro_index == k)
         {
             _gyro_offset(k).set_and_save(Vector3f());
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+            caltemp_gyro(k).set_and_save(-300);
+#endif
             continue;
         }
 #endif
@@ -2443,6 +2452,9 @@ void AP_InertialSensor::_acal_save_calibrations()
             _accel_offset(i).set_and_save(Vector3f());
             _accel_scale(i).set_and_save(Vector3f(1, 1, 1));
             _accel_id(i).save();
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+            caltemp_accel(i).set_and_save(-300);
+#endif
             _accel_id_ok[i] = true;
             continue;
         }
@@ -2725,6 +2737,9 @@ MAV_RESULT AP_InertialSensor::simple_accel_cal()
                 _accel_offset(k).set_and_save(Vector3f());
                 _accel_scale(k).set_and_save(Vector3f(1, 1, 1));
                 _accel_id(k).save();
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+                caltemp_accel(k).set_and_save(-300);
+#endif
                 _accel_id_ok[k] = true;
                 continue;
             }
