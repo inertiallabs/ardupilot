@@ -2139,6 +2139,13 @@ void Compass::motor_compensation_type(const uint8_t comp_type)
 
 bool Compass::consistent() const
 {
+    // Dirty hack skip consistent check if external AHRS is the main
+    const StateIndex id = _get_state_id(Priority(0));
+    if (_state[id].external && AP_ExternalAHRS::get_singleton())
+    {
+        return true;
+    }
+
     const Vector3f &primary_mag_field { get_field() };
     const Vector2f &primary_mag_field_xy { primary_mag_field.xy() };
 
