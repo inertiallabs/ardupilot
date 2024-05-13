@@ -43,7 +43,9 @@ public:
     virtual void get_filter_status(nav_filter_status &status) const {}
     virtual void send_status_report(class GCS_MAVLINK &link) const {}
     virtual void write_bytes(const char *bytes, uint8_t len) {};
-
+    virtual bool get_wind_estimation(Vector3f &wind) {return false;};                //AVK 10.05.2024
+    virtual bool get_true_airspeed(float &airspeed) {return false;};                 //AVK 11.05.2024
+    virtual bool get_true_baro_alt(float &baro_alt) {return false;};                 //AVK 11.05.2024
     // Check for new data.
     // This is used when there's not a separate thread for EAHRS.
     // This can also copy interim state protected by locking.

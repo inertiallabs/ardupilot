@@ -278,6 +278,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             CHECK_SIZE(u.baro_data);
             baro_data.pressure_pa = u.baro_data.pressure_pa2*2; // Pa
             state2.baro_alt = u.baro_data.baro_alt*0.01; // m
+            baro_data.baro_altitude = state2.baro_alt; // m AVK 07.05.2024
             break;
         }
         case MessageType::MAG_DATA: {
@@ -384,17 +385,19 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
         case MessageType::DIFFERENTIAL_PRESSURE: {
             CHECK_SIZE(u.differential_pressure);
-            airspeed_data.differential_pressure = u.differential_pressure*1.0e-4*100; // 100: mbar to Pa
+            airspeed_data.differential_pressure = u.differential_pressure*1.0e-4*100.0; // 100: mbar to Pa
             break;
         }
         case MessageType::TRUE_AIRSPEED: {
             CHECK_SIZE(u.true_airspeed);
             state2.true_airspeed = u.true_airspeed*0.01; // m/s
+ //           airspeed_data.true_airspeed = state2.true_airspeed;//u.true_airspeed*0.01; // m/s AVK 01/05/2024
             break;
         }
         case MessageType::WIND_SPEED: {
             CHECK_SIZE(u.wind_speed);
-            state2.wind_speed = u.wind_speed.tofloat().rfu_to_frd()*0.01; // m/s
+            state2.wind_speed        = u.wind_speed.tofloat().rfu_to_frd()*0.01; // m/s
+  //          airspeed_data.wind_speed = state2.wind_speed;//u.wind_speed.tofloat().rfu_to_frd()*0.01; // m/s AVK 01/05/2024
             break;
         }
         case MessageType::AIR_DATA_STATUS: {
@@ -1081,6 +1084,28 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
         (state2.unit_status2 & ILABS_UNIT_STATUS2_GNSS_POS_VALID) != 0 &&
         (state2.unit_status & ILABS_UNIT_STATUS_GNSS_FAIL) == 0;
     status.flags.rejecting_airspeed = (state2.air_data_status & ILABS_AIRDATA_AIRSPEED_FAIL);
+}
+
+bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)  //AVK 10.05.2024
+{
+     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED))     //AVK 09.05.2024
+        {wind =  state2.wind_speed; return true;}
+      
+    return false;
+}
+bool AP_ExternalAHRS_InertialLabs::get_true_airspeed(float &airspeed)   //AVK 11.05.2024
+{
+     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED))     //AVK 11.05.2024
+        {airspeed =  state2.true_airspeed; return true;}
+      
+    return false;
+}
+bool AP_ExternalAHRS_InertialLabs::get_true_baro_alt(float &baro_alt)    //AVK 11.05.2024
+{
+     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_BARO_ALT))      //AVK 11.05.2024
+        {baro_alt =  state2.baro_alt; return true;}
+      
+    return false;
 }
 
 // send an EKF_STATUS message to GCS
