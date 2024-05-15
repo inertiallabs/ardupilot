@@ -242,6 +242,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     Bitmask<256> msg_types;
     uint32_t now_ms = AP_HAL::millis();
 
+    if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_trans_diff_pressure)) // AVK test 15.05.2024
+        make_tx_packet(tx_buffer);
+
     for (uint8_t i=0; i<num_messages; i++) {
         if (message_ofs >= buffer_end) {
             re_sync();
@@ -253,6 +256,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
         msg_types.set(unsigned(mtype));
 
+        
         switch (mtype) {
         case MessageType::GPS_INS_TIME_MS: {
             CHECK_SIZE(u.gnss_time_ms);
@@ -1152,6 +1156,18 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     mavlink_msg_ekf_status_report_send(link.get_chan(), flags, 0, 0, 0, 0, 0, 0);
 }
 
+
+uint16_t AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const //AVK 15.05.2024
+{
+
+uint8_t send_packet[] = {0xAA,0x55,0x01,0x62,0x0F,0x00,0x02,0x02,0x12,0xB9,0x0B,0x04,0x29,0x10,0x27,0xB0,0x01};
+
+//memcpy(packet,send_packet,sizeof(send_packet));
+uart->write(send_packet, sizeof(send_packet));
+
+return (uint16_t)sizeof(send_packet);
+
+}
 void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
 {
     uart->write(reinterpret_cast<const uint8_t *>(bytes), len);

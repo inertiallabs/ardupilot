@@ -42,6 +42,7 @@ public:
     bool get_wind_estimation(Vector3f &wind)  override; //AVK 10.05.2024
     bool get_true_airspeed(float &airspeed) override;   //AVK 11.05.2024
     bool get_true_baro_alt(float &baro_alt) override;   //AVK 11.05.2024
+ 
     // check for new data
     void update() override {
         check_uart();
@@ -84,6 +85,12 @@ public:
         GNSS_ANGLE_POS_TYPE = 0x3A,
         GNSS_HEADING_TIMESTAMP = 0x40,
         GNSS_DOP = 0x42,
+    };
+    enum class Tx_MessageType : uint8_t {
+        //------------------------for tx to ILab------- AVK 15.05.2024
+        AP_PRESSURE = 0x12,
+        AP_POSITION = 0x00,
+        
     };
 
     /*
@@ -205,6 +212,8 @@ public:
 
     uint16_t buffer_ofs;
     uint8_t buffer[256]; // max for normal message set is 167+8
+    uint16_t tx_buffer_ofs; //AVK 15.05.2024 tx buffer offset 
+    uint8_t tx_buffer[256]; //AVK 14.05.2024 tx buffer for send to Ilab
 
 private:
     AP_HAL::UARTDriver *uart;
@@ -215,6 +224,7 @@ private:
     void update_thread();
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
+    uint16_t make_tx_packet(uint8_t *packet) const; //AVK 15.05.2024
 
     // re-sync on header bytes
     void re_sync(void);

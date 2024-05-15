@@ -183,6 +183,7 @@ public:
         ILAB_ENABLE_CLB = (1U << 1), // Enable InertialLabs INS compass, accelerometer and gyro calibration
         ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
         ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
+        ILAB_trans_diff_pressure = (1U << 4), // AVK 15.05.2024 Enable send diff_pressure to ILab   
     };
 
 protected: //AVK 09.5.2024 why is protected ????????  
