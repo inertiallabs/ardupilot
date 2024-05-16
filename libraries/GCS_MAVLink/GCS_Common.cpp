@@ -3020,6 +3020,18 @@ MAV_RESULT GCS_MAVLINK::handle_inertiallabs_message(const mavlink_command_int_t 
             AP::externalAHRS().write_bytes(InertialLabs::Command::STOP_VG3DCLB_FLIGHT,
                                             sizeof(InertialLabs::Command::STOP_VG3DCLB_FLIGHT) - 1);
             return MAV_RESULT_ACCEPTED;
+
+        case INERTIALLABS_AHRS_COMMAND_TYPE::START:
+            send_text(MAV_SEVERITY_INFO, "START command sent to the Inertial Labs AHRS");
+            AP::externalAHRS().write_bytes(InertialLabs::Command::START_UDD,
+                                            sizeof(InertialLabs::Command::START_UDD) - 1);
+            return MAV_RESULT_ACCEPTED;
+
+        case INERTIALLABS_AHRS_COMMAND_TYPE::STOP:
+            send_text(MAV_SEVERITY_INFO, "STOP command sent to the Inertial Labs AHRS");
+            AP::externalAHRS().write_bytes(InertialLabs::Command::STOP,
+                                            sizeof(InertialLabs::Command::STOP) - 1);
+            return MAV_RESULT_ACCEPTED;
         default:
             return MAV_RESULT_FAILED;
     }
