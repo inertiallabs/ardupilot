@@ -1326,7 +1326,7 @@ void Compass::_detect_backends(void)
         ADD_BACKEND(DRIVER_EXTERNALAHRS, new AP_Compass_ExternalAHRS(serial_port));
     }
 #endif
-    
+
 #if AP_FEATURE_BOARD_DETECT
     if (AP_BoardConfig::get_board_type() == AP_BoardConfig::PX4_BOARD_PIXHAWK2) {
         // default to disabling LIS3MDL on pixhawk2 due to hardware issue
@@ -2040,12 +2040,22 @@ bool Compass::configured(uint8_t i)
 
     // exit immediately if all offsets are zero
     if (is_zero(get_offsets(i).length())) {
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        StateIndex id = _get_state_id(Priority(i));
+        if (!_state[id].external ||
+        !AP_ExternalAHRS::get_singleton())
+        {
+            return false;
+        }
+#elif
         return false;
+#endif
     }
 
     StateIndex id = _get_state_id(Priority(i));
     // exit immediately if dev_id hasn't been detected
-    if (_state[id].detected_dev_id == 0 || 
+    if (_state[id].detected_dev_id == 0 ||
         id == COMPASS_MAX_INSTANCES) {
         return false;
     }
@@ -2129,6 +2139,13 @@ void Compass::motor_compensation_type(const uint8_t comp_type)
 
 bool Compass::consistent() const
 {
+    // Dirty hack skip consistent check if external AHRS is the main
+    const StateIndex id = _get_state_id(Priority(0));
+    if (_state[id].external && AP_ExternalAHRS::get_singleton())
+    {
+        return true;
+    }
+
     const Vector3f &primary_mag_field { get_field() };
     const Vector2f &primary_mag_field_xy { primary_mag_field.xy() };
 

@@ -320,6 +320,14 @@ protected:
     // function which instantiates an instance of the backend sensor
     // driver if the sensor is available
 
+    void set_external_ahrs_gyro_index(int16_t id) {
+        _imu._external_ahrs_gyro_index = id;
+    }
+
+    void set_external_ahrs_accel_index(int16_t id) {
+        _imu._external_ahrs_accel_index = id;
+    }
+
 private:
 
     bool should_log_imu_raw() const ;

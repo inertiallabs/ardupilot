@@ -81,8 +81,8 @@ public:
 
     /// Register a new gyro/accel driver, allocating an instance
     /// number
-    bool register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
-    bool register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
+    bool register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs = false);
+    bool register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id, bool isExternalAhrs = false);
 
     // a function called by the main thread at the main loop rate:
     void periodic();
@@ -92,7 +92,7 @@ public:
 
     /// calibrating - returns true if a temperature calibration is running
     bool temperature_cal_running() const;
-    
+
     /// Perform cold-start initialisation for just the gyros.
     ///
     /// @note This should not be called unless ::init has previously
@@ -348,7 +348,7 @@ public:
 
         // class level parameters
         static const struct AP_Param::GroupInfo var_info[];
-    
+
 
         // Parameters
         AP_Int16 _required_count;
@@ -494,7 +494,7 @@ private:
 
     // Logging function
     void Write_IMU_instance(const uint64_t time_us, const uint8_t imu_instance) const;
-    
+
     // backend objects
     AP_InertialSensor_Backend *_backends[INS_MAX_BACKENDS];
 
@@ -571,6 +571,15 @@ private:
     // accelerometer position offset in body frame
     AP_Vector3f _accel_pos_old_param[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
 
+    // for saved params from previous calibrations
+    uint32_t saved_accel_id[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_scale[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_offsets[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_accel_pos[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+
+    uint32_t saved_gyro_id[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+    AP_Vector3f saved_gyro_offsets[INS_MAX_INSTANCES-INS_AUX_INSTANCES];
+
     // Use Accessor methods to access above variables
 #if INS_AUX_INSTANCES
     #define INS_PARAM_WRAPPER(var) \
@@ -623,7 +632,7 @@ private:
     uint32_t _sample_accel_start_us[INS_MAX_INSTANCES];
     uint16_t _sample_gyro_count[INS_MAX_INSTANCES];
     uint32_t _sample_gyro_start_us[INS_MAX_INSTANCES];
-    
+
     // temperatures for an instance if available
     float _temperature[INS_MAX_INSTANCES];
 
@@ -644,7 +653,7 @@ private:
 
     // control enable of detected sensors
     AP_Int8     _enable_mask;
-    
+
     // board orientation from AHRS
     enum Rotation _board_orientation;
 
@@ -659,6 +668,9 @@ private:
     // primary accel and gyro
     uint8_t _primary_gyro;
     uint8_t _primary_accel;
+
+    int16_t _external_ahrs_gyro_index {-1};
+    int16_t _external_ahrs_accel_index {-1};
 
     // mask of accels and gyros which we will be actively using
     // and this should wait for in wait_for_sample()

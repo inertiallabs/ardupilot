@@ -61,7 +61,7 @@ bool Compass::_start_calibration(uint8_t i, bool retry, float delay)
         return false;
     }
 #endif
-    
+
     if (_calibrator[prio] == nullptr) {
         _calibrator[prio] = new CompassCalibrator();
         if (_calibrator[prio] == nullptr) {
@@ -202,6 +202,26 @@ bool Compass::_accept_calibration(uint8_t i)
         Vector3f ofs(cal_report.ofs), diag(cal_report.diag), offdiag(cal_report.offdiag);
         float scale_factor = cal_report.scale_factor;
 
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        StateIndex id = _get_state_id(prio);
+        if (id < COMPASS_MAX_INSTANCES &&
+            _state[id].external &&
+            AP_ExternalAHRS::get_singleton())
+        {
+            set_and_save_offsets(i, Vector3f());
+#if AP_COMPASS_DIAGONALS_ENABLED
+            set_and_save_diagonals(i, Vector3f());
+            set_and_save_offdiagonals(i, Vector3f());
+#endif
+            set_and_save_scale_factor(i, 1);
+            if (!is_calibrating()) {
+                AP_Notify::events.compass_cal_saved = 1;
+            }
+            return true;
+        }
+#endif
+
         set_and_save_offsets(i, ofs);
 #if AP_COMPASS_DIAGONALS_ENABLED
         set_and_save_diagonals(i,diag);
@@ -247,7 +267,7 @@ bool Compass::send_mag_cal_progress(const GCS_MAVLINK& link)
 
     for (uint8_t i = 0; i < COMPASS_MAX_INSTANCES; i++) {
         const Priority compass_id = (next_cal_progress_idx[chan] + 1) % COMPASS_MAX_INSTANCES;
-        
+
         auto& calibrator = _calibrator[compass_id];
         if (calibrator == nullptr) {
             next_cal_progress_idx[chan] = compass_id;
@@ -435,19 +455,19 @@ MAV_RESULT Compass::handle_mag_cal_command(const mavlink_command_int_t &packet)
             result = MAV_RESULT_FAILED;
             break;
         }
-        
+
         uint8_t mag_mask = packet.param1;
-        
+
         if (mag_mask == 0) { // 0 means all
             cancel_calibration_all();
             break;
         }
-        
+
         _cancel_calibration_mask(mag_mask);
         break;
     }
     }
-    
+
     return result;
 }
 

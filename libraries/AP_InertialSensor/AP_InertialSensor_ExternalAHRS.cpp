@@ -43,10 +43,18 @@ bool AP_InertialSensor_ExternalAHRS::update(void)
 void AP_InertialSensor_ExternalAHRS::start()
 {
     const float rate = AP::externalAHRS().get_IMU_rate();
-    if (_imu.register_gyro(gyro_instance, rate,
-                           AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 1, DEVTYPE_SERIAL)) &&
-        _imu.register_accel(accel_instance, rate,
-                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 2, DEVTYPE_SERIAL))) {
+    if (_imu.register_gyro(gyro_instance,
+                           rate,
+                           AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 1, DEVTYPE_SERIAL),
+                           true /*isExternalAhrs*/) &&
+        _imu.register_accel(accel_instance,
+                            rate,
+                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 2, DEVTYPE_SERIAL),
+                            true /*isExternalAhrs*/)) {
+
+        set_external_ahrs_gyro_index(gyro_instance);
+        set_external_ahrs_accel_index(accel_instance);
+
         started = true;
     }
 }
@@ -68,4 +76,3 @@ bool AP_InertialSensor_ExternalAHRS::get_output_banner(char* banner, uint8_t ban
 }
 
 #endif // HAL_EXTERNAL_AHRS_ENABLED
-
