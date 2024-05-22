@@ -291,6 +291,13 @@ void AP_ExternalAHRS::write_bytes(const char *bytes, uint8_t len)
     }
 }
 
+void AP_ExternalAHRS::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
+{
+    if (backend) {
+        backend->handle_command(command, data);
+    }
+}
+
 bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const    //AVK 11.05.2024
 {
     if (backend) {
@@ -306,7 +313,7 @@ bool AP_ExternalAHRS::get_airspeed(float &tas) const            //AVK 11.05.2024
        }
     return false;
 }
-bool AP_ExternalAHRS::get_baro_alt(float &tbalt) const          //AVK 11.05.2024 
+bool AP_ExternalAHRS::get_baro_alt(float &tbalt) const          //AVK 11.05.2024
 {
     if (backend) {
     return backend->get_true_baro_alt(tbalt);

@@ -21,6 +21,7 @@
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
 #include "AP_ExternalAHRS_InertialLabs.h"
+#include "AP_ExternalAHRS_InertialLabs_command.h"
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
 #include <AP_Baro/AP_Baro.h>
@@ -266,7 +267,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
         case MessageType::ACCEL_DATA_HR: {
             CHECK_SIZE(u.accel_data_hr);
-            ins_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*9.8106f*1.0e-6; // m/s/s    
+            ins_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*9.8106f*1.0e-6; // m/s/s
             break;
         }
         case MessageType::GYRO_DATA_HR: {
@@ -520,7 +521,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             last_gps_ms = now_ms;
         }
-        
+
         uint64_t now_us = AP_HAL::micros64();
 
         // @LoggerMessage: ILB4
@@ -589,7 +590,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     nav_ins_data.hdop, nav_ins_data.vdop, gnss_data.tdop);
 
     }
-    
+
     if (GOT_MSG(BARO_DATA) &&
         GOT_MSG(TEMPERATURE)) {
         AP::baro().handle_external(baro_data);
@@ -679,7 +680,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: Lng: longitude
         // @Field: Alt: altitude MSL
         // @Field: USW: USW1
-        // @Field: USW2: USW2  
+        // @Field: USW2: USW2
         // @Field: Vdc: Supply voltage
 
         AP::logger().WriteStreaming("ILB7", "TimeUS,GMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc",
@@ -1145,13 +1146,60 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     if (!filterStatus.flags.initalized) {
         flags |= EKF_UNINITIALIZED;
     }
-    
+
     mavlink_msg_ekf_status_report_send(link.get_chan(), flags, 0, 0, 0, 0, 0, 0);
 }
 
 void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
 {
     uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
+}
+
+void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
+{
+    switch (command) {
+        case ExternalAHRS_command::START_UDD:
+            write_bytes(InertialLabs::Command::START_UDD,
+                        sizeof(InertialLabs::Command::START_UDD) - 1);
+            break;
+        case ExternalAHRS_command::STOP:
+            write_bytes(InertialLabs::Command::STOP,
+                        sizeof(InertialLabs::Command::STOP) - 1);
+            break;
+        case ExternalAHRS_command::ENABLE_GNSS:
+            write_bytes(InertialLabs::Command::ENABLE_GNSS,
+                        sizeof(InertialLabs::Command::ENABLE_GNSS) - 1);
+            break;
+        case ExternalAHRS_command::DISABLE_GNSS:
+            write_bytes(InertialLabs::Command::DISABLE_GNSS,
+                        sizeof(InertialLabs::Command::DISABLE_GNSS) - 1);
+            break;
+        case ExternalAHRS_command::START_VG3D_CALIBRATION_IN_FLIGHT:
+            write_bytes(InertialLabs::Command::START_VG3DCLB_FLIGHT,
+                        sizeof(InertialLabs::Command::START_VG3DCLB_FLIGHT) - 1);
+            break;
+        case ExternalAHRS_command::STOP_VG3D_CALIBRATION_IN_FLIGHT:
+            write_bytes(InertialLabs::Command::STOP_VG3DCLB_FLIGHT,
+                        sizeof(InertialLabs::Command::STOP_VG3DCLB_FLIGHT) - 1);
+            break;
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_POSITION:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_ALTITUDE:
+        case ExternalAHRS_command::AIDING_DATA_WIND:
+        case ExternalAHRS_command::AIDING_DATA_AMBIENT_AIR:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING:
+        {
+            InertialLabs::Data_context context;
+            InertialLabs::fill_command_pyload(context, command, data);
+            InertialLabs::fill_transport_protocol_data(context);
+            AP::externalAHRS().write_bytes(reinterpret_cast<const char *>(context.data), context.length);
+            break;
+        }
+
+        default:
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: Invalid command for handling");
+    }
+
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
