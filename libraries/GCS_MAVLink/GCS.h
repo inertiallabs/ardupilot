@@ -603,7 +603,7 @@ protected:
     bool get_ap_message_interval(ap_message id, uint16_t &interval_ms) const;
     MAV_RESULT handle_command_request_message(const mavlink_command_int_t &packet);
 
-    MAV_RESULT handle_inertiallabs_message(const mavlink_command_int_t &packet);
+    MAV_RESULT handle_externalAHRS_message(const mavlink_command_int_t &packet);
 
     MAV_RESULT handle_START_RX_PAIR(const mavlink_command_int_t &packet);
 

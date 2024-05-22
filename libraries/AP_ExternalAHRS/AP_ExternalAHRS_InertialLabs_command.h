@@ -22,6 +22,32 @@
 
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
+#include "AP_ExternalAHRS_command_context.h"
+
+#include <stdint.h>
+
+namespace InertialLabs {
+
+constexpr size_t BUFFER_SIZE = 100;
+
+/// messageType(1 byte) + dataIdentifier(1 byte) + messageLength(2 byte) + checksum(2 byte) = 6 byte
+const uint16_t PACKAGE_ADDITIONAL_PARAMS_SIZE = 6;
+
+struct Data_context {
+    uint16_t length{0};
+    uint8_t data[BUFFER_SIZE];
+};
+
+uint16_t calculate_checksum(const uint8_t * buf, uint16_t size);
+
+bool fill_command_pyload(Data_context & context,
+                         ExternalAHRS_command command,
+                         const ExternalAHRS_command_data &data);
+
+bool fill_transport_protocol_data(Data_context & context);
+
+} // namespace InertialLabs
+
 namespace InertialLabs::Command {
 
 const char ENABLE_GNSS[] = "\xAA\x55\x00\x00\x07\x00\x71\x78\x00";
