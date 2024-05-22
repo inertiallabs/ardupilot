@@ -119,6 +119,9 @@ public:
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
     void write_bytes(const char *bytes, uint8_t len);
+    bool get_estimate_wind(Vector3f &wind) const;       //AVK 11.05.2024
+    bool get_airspeed(float &tas) const;                //AVK 11.05.2024
+    bool get_baro_alt(float &tbalt) const;              //AVK 11.05.2024    
 
     // update backend
     void update();
@@ -130,6 +133,7 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
+        float baro_altitude; //AVK 07.05.2024
     } baro_data_message_t;
 
     typedef struct {
@@ -170,14 +174,14 @@ public:
         gnss_is_disabled = disable;
     }
 
-protected:
-
     enum class OPTIONS {
         VN_UNCOMP_IMU = (1U << 0),
         ILAB_ENABLE_CLB = (1U << 1), // Enable InertialLabs INS compass, accelerometer and gyro calibration
         ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
         ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
     };
+
+protected:
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }
 
 private:

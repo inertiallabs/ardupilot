@@ -46,9 +46,10 @@ public:
     void            reset() override {}
 
     // return a wind estimation vector, in m/s
-    bool wind_estimate(Vector3f &ret) const override {
-        return false;
-    }
+    bool wind_estimate(Vector3f &ret) const override;
+    // {
+    //  return false; // AVK 10.05.2024
+    // }
 
     // return a ground vector estimate in meters/second, in North/East order
     Vector2f groundspeed_vector() override;
