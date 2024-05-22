@@ -74,9 +74,8 @@
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Vehicle/AP_Vehicle_config.h>
 
-#if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+#if AP_EXTERNAL_AHRS_BACKEND_DEFAULT_ENABLED
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
-#include <AP_ExternalAHRS/AP_ExternalAHRS_InertialLabs_command.h>
 #endif
 
 #include <stdio.h>
@@ -2994,44 +2993,58 @@ MAV_RESULT GCS_MAVLINK::handle_command_request_message(const mavlink_command_int
     return MAV_RESULT_ACCEPTED;
 }
 
-MAV_RESULT GCS_MAVLINK::handle_inertiallabs_message(const mavlink_command_int_t &packet)
+MAV_RESULT GCS_MAVLINK::handle_externalAHRS_message(const mavlink_command_int_t &packet)
 {
-    switch ((uint32_t)packet.param1) {
-        case INERTIALLABS_AHRS_COMMAND_TYPE::DISABLE_GNSS:
-            send_text(MAV_SEVERITY_INFO, "DISABLE_GNSS command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::DISABLE_GNSS,
-                                            sizeof(InertialLabs::Command::DISABLE_GNSS) - 1);
+    switch (packet.command) {
+        case MAV_CMD_EXTERNAL_AHRS_START_UDD:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::START_UDD,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_STOP:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::STOP,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_ENABLE_GNSS:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::ENABLE_GNSS,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_DISABLE_GNSS:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::DISABLE_GNSS,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_START_VG3D_CALIBRATION_IN_FLIGHT:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::START_VG3D_CALIBRATION_IN_FLIGHT,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_STOP_VG3D_CALIBRATION_IN_FLIGHT:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::STOP_VG3D_CALIBRATION_IN_FLIGHT,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_POSITION:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_POSITION,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_ALTITUDE:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_ALTITUDE,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_WIND:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_WIND,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_AMBIENT_AIR:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_AMBIENT_AIR,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
             return MAV_RESULT_ACCEPTED;
 
-        case INERTIALLABS_AHRS_COMMAND_TYPE::ENABLE_GNSS:
-            send_text(MAV_SEVERITY_INFO, "ENABLE_GNSS command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::ENABLE_GNSS,
-                                            sizeof(InertialLabs::Command::ENABLE_GNSS) - 1);
-            return MAV_RESULT_ACCEPTED;
-
-        case INERTIALLABS_AHRS_COMMAND_TYPE::START_VG3D_CALIBRATION_IN_FLIGHT:
-            send_text(MAV_SEVERITY_INFO, "START_VG3DCLB_FLIGHT command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::START_VG3DCLB_FLIGHT,
-                                            sizeof(InertialLabs::Command::START_VG3DCLB_FLIGHT) - 1);
-            return MAV_RESULT_ACCEPTED;
-
-        case INERTIALLABS_AHRS_COMMAND_TYPE::STOP_VG3D_CALIBRATION_IN_FLIGHT:
-            send_text(MAV_SEVERITY_INFO, "STOP_VG3DCLB_FLIGHT command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::STOP_VG3DCLB_FLIGHT,
-                                            sizeof(InertialLabs::Command::STOP_VG3DCLB_FLIGHT) - 1);
-            return MAV_RESULT_ACCEPTED;
-
-        case INERTIALLABS_AHRS_COMMAND_TYPE::START:
-            send_text(MAV_SEVERITY_INFO, "START command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::START_UDD,
-                                            sizeof(InertialLabs::Command::START_UDD) - 1);
-            return MAV_RESULT_ACCEPTED;
-
-        case INERTIALLABS_AHRS_COMMAND_TYPE::STOP:
-            send_text(MAV_SEVERITY_INFO, "STOP command sent to the Inertial Labs AHRS");
-            AP::externalAHRS().write_bytes(InertialLabs::Command::STOP,
-                                            sizeof(InertialLabs::Command::STOP) - 1);
-            return MAV_RESULT_ACCEPTED;
         default:
             return MAV_RESULT_FAILED;
     }
@@ -5355,8 +5368,19 @@ MAV_RESULT GCS_MAVLINK::handle_command_int_packet(const mavlink_command_int_t &p
         return handle_command_request_message(packet);
 
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
-    case MAV_CMD_INERTIALLABS_AHRS_SEND:
-        return handle_inertiallabs_message(packet);
+    case MAV_CMD_EXTERNAL_AHRS_START_UDD:
+    case MAV_CMD_EXTERNAL_AHRS_STOP:
+    case MAV_CMD_EXTERNAL_AHRS_ENABLE_GNSS:
+    case MAV_CMD_EXTERNAL_AHRS_DISABLE_GNSS:
+    case MAV_CMD_EXTERNAL_AHRS_START_VG3D_CALIBRATION_IN_FLIGHT:
+    case MAV_CMD_EXTERNAL_AHRS_STOP_VG3D_CALIBRATION_IN_FLIGHT:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_POSITION:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_ALTITUDE:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_WIND:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_AMBIENT_AIR:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
+        return handle_externalAHRS_message(packet);
 #endif
 
     }
