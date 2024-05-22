@@ -291,6 +291,29 @@ void AP_ExternalAHRS::write_bytes(const char *bytes, uint8_t len)
     }
 }
 
+bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const    //AVK 11.05.2024
+{
+    if (backend) {
+    return backend->get_wind_estimation(wind);
+    }
+    return false;
+}
+
+bool AP_ExternalAHRS::get_airspeed(float &tas) const            //AVK 11.05.2024
+{
+    if (backend) {
+    return backend->get_true_airspeed(tas);
+       }
+    return false;
+}
+bool AP_ExternalAHRS::get_baro_alt(float &tbalt) const          //AVK 11.05.2024 
+{
+    if (backend) {
+    return backend->get_true_baro_alt(tbalt);
+       }
+    return false;
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {
