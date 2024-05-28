@@ -717,7 +717,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     uint32_t now_usw = AP_HAL::millis();
 
     // InertialLabs critical messages to GCS (sending messages once every 10 seconds)
-    if (now_usw - last_critical_msg_ms > dt_critical_usw) {
+    if ((last_unit_status != state2.unit_status) ||
+        (last_unit_status2 != state2.unit_status2) ||
+        (last_air_data_status != state2.air_data_status) ||
+        (now_usw - last_critical_msg_ms > dt_critical_usw)) {
         // Critical USW message
         if (state2.unit_status & ILABS_UNIT_STATUS_ALIGNMENT_FAIL) {
             GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: Unsuccessful initial alignment");
@@ -959,7 +962,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
     // InertialLabs INS spoofing detection messages to GCS
     if (last_spoof_status != gnss_data.spoof_status) {
-        if (gnss_data.spoof_status == 1 && (last_spoof_status == 2 || last_spoof_status == 3)) {
+        if ((last_spoof_status == 2 || last_spoof_status == 3) && (gnss_data.spoof_status == 1)) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no spoofing");
         }
 
@@ -976,7 +979,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
     // InertialLabs INS jamming detection messages to GCS
     if (last_jam_status != gnss_data.jam_status) {
-        if (gnss_data.jam_status == 1 && (last_jam_status == 2 || last_jam_status == 3)) {
+        if ((last_jam_status == 2 || last_jam_status == 3) && (gnss_data.jam_status == 1)) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no jamming");
         }
 
