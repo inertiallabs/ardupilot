@@ -5,6 +5,8 @@
 #include "AP_ExternalAHRS_command_context.h"
 #include "AP_ExternalAHRS_InertialLabs_aiding_data.h"
 
+#include <AP_Math/AP_Math.h>
+
 #include <string.h>
 
 namespace InertialLabs {
@@ -26,7 +28,7 @@ bool fill_command_pyload(Data_context & context,
                          const ExternalAHRS_command_data &data) {
     // transport + checksum + aidingData count + aidingData type
     context.length = 6 + 2 + 1 + 1;
-    
+
     // The first 6 bites (0-5) and last 2 bytes (payload+2) reserved for the transport protocol info
     // Start payload from 7th byte
     context.data[6] = 0x01;
@@ -73,11 +75,23 @@ bool fill_command_pyload(Data_context & context,
         case ExternalAHRS_command::AIDING_DATA_WIND:
             context.data[7] = 0x03;
             {
+                const float direction = data.param1;
+                const float speed = data.param2;
+                const float speedStd = data.param3;
+
+                // Speed in m/s
+                const float NWind = speed * cos(direction * M_PI / 180);
+                const float EWind = speed * sin(direction * M_PI / 180);
+                const float NWindStd = speedStd; //< as designed
+                const float EWindStd = speedStd; //< as designed
+
+                // Speed from m/s to kt
+                const float m_per_s_to_kt = 1.943844;
                 AidingData::Wind *d = (AidingData::Wind *) &context.data[8];
-                d->north = static_cast<int16_t>(data.param1 * 1e2);
-                d->east = static_cast<int16_t>(data.param2 * 1e2);
-                d->northStd = static_cast<int16_t>(data.param3 * 1e2);
-                d->eastStd = static_cast<int16_t>(data.param4 * 1e2);
+                d->north = static_cast<int16_t>(NWind * m_per_s_to_kt * 1e2);
+                d->east = static_cast<int16_t>(EWind * m_per_s_to_kt * 1e2);
+                d->northStd = static_cast<int16_t>(NWindStd * m_per_s_to_kt * 1e2);
+                d->eastStd = static_cast<int16_t>(EWindStd * m_per_s_to_kt * 1e2);
             }
             context.length += sizeof(AidingData::Wind);
             return true;
