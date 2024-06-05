@@ -80,8 +80,8 @@ bool fill_command_pyload(Data_context & context,
                 const float speedStd = data.param3;
 
                 // Speed in m/s
-                const float NWind = speed * cos(direction * M_PI / 180);
-                const float EWind = speed * sin(direction * M_PI / 180);
+                const float NWind = speed * cosf(direction * M_PI / 180);
+                const float EWind = speed * sinf(direction * M_PI / 180);
                 const float NWindStd = speedStd; //< as designed
                 const float EWindStd = speedStd; //< as designed
 
