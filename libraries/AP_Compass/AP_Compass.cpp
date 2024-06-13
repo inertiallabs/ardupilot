@@ -2044,7 +2044,7 @@ bool Compass::configured(uint8_t i)
         {
             return false;
         }
-#elif
+#else
         return false;
 #endif
     }
@@ -2137,7 +2137,12 @@ bool Compass::consistent() const
 {
     // Dirty hack skip consistent check if external AHRS is the main
     const StateIndex id = _get_state_id(Priority(0));
-    if (_state[id].external && AP_ExternalAHRS::get_singleton())
+    bool hasEAHRS = false;
+#if HAL_EXTERNAL_AHRS_ENABLED
+    hasEAHRS = AP_ExternalAHRS::get_singleton();
+#endif
+
+    if (_state[id].external && hasEAHRS)
     {
         return true;
     }
