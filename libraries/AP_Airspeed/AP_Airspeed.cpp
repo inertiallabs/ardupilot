@@ -3,12 +3,12 @@
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -109,7 +109,7 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
     // @User: Advanced
     // @Values: 0:Normal,1:Swapped,2:Auto Detect
 
-    // tube order param had to be shortened so is not preserved in per group descriptions 
+    // tube order param had to be shortened so is not preserved in per group descriptions
 
 #if AIRSPEED_MAX_SENSORS > 1
     // @Param: _PRIMARY
@@ -154,14 +154,14 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
     // @Range: 0.0 10.0
     // @User: Advanced
     AP_GROUPINFO("_WIND_GATE", 26, AP_Airspeed, _wind_gate, 5.0f),
-    
+
     // @Param: _OFF_PCNT
-    // @DisplayName: Maximum offset cal speed error 
+    // @DisplayName: Maximum offset cal speed error
     // @Description: The maximum percentage speed change in airspeed reports that is allowed due to offset changes between calibrations before a warning is issued. This potential speed error is in percent of ASPD_FBW_MIN. 0 disables. Helps warn of calibrations without pitot being covered.
     // @Range: 0.0 10.0
     // @Units: %
     // @User: Advanced
-    AP_GROUPINFO_FRAME("_OFF_PCNT", 27, AP_Airspeed, max_speed_pcnt, 0, AP_PARAM_FRAME_PLANE),    
+    AP_GROUPINFO_FRAME("_OFF_PCNT", 27, AP_Airspeed, max_speed_pcnt, 0, AP_PARAM_FRAME_PLANE),
 
 #endif
 
@@ -426,7 +426,7 @@ void AP_Airspeed::allocate()
             break;
         case TYPE_NMEA_WATER:
 #if AP_AIRSPEED_NMEA_ENABLED
-#if APM_BUILD_TYPE(APM_BUILD_Rover) || APM_BUILD_TYPE(APM_BUILD_ArduSub) 
+#if APM_BUILD_TYPE(APM_BUILD_Rover) || APM_BUILD_TYPE(APM_BUILD_ArduSub)
             sensor[i] = new AP_Airspeed_NMEA(*this, i);
 #endif
 #endif
@@ -548,7 +548,7 @@ void AP_Airspeed::update_calibration(uint8_t i, float raw_pressure)
     if (!enabled(i) || state[i].cal.start_ms == 0) {
         return;
     }
-    
+
     // consider calibration complete when we have at least 15 samples
     // over at least 1 second
     if (AP_HAL::millis() - state[i].cal.start_ms >= 1000 &&
@@ -664,7 +664,9 @@ void AP_Airspeed::read(uint8_t i)
         state[i].last_pressure  = fabsf(airspeed_pressure);
         state[i].raw_airspeed   = sqrtf(fabsf(airspeed_pressure) * param[i].ratio);
      // state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);    //old AVK 12.05.2024
+#if HAL_EXTERNAL_AHRS_ENABLED
         state[i].healthy        =  AP::externalAHRS().get_airspeed(state[i].airspeed);          // AVK 12.05.2024
+#endif
         break;
     }
 #endif // HAL_BUILD_AP_PERIPH
@@ -736,7 +738,7 @@ void AP_Airspeed::handle_msp(const MSP::msp_airspeed_data_message_t &pkt)
         }
     }
 }
-#endif 
+#endif
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED
 /*
@@ -754,7 +756,7 @@ void AP_Airspeed::handle_external(const AP_ExternalAHRS::airspeed_data_message_t
         }
     }
 }
-#endif 
+#endif
 
 #if HAL_LOGGING_ENABLED
 // @LoggerMessage: HYGR

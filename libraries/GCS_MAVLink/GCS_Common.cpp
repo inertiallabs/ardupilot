@@ -3014,6 +3014,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_request_message(const mavlink_command_int
 
 MAV_RESULT GCS_MAVLINK::handle_externalAHRS_message(const mavlink_command_int_t &packet)
 {
+#if HAL_EXTERNAL_AHRS_ENABLED
     switch (packet.command) {
         case MAV_CMD_EXTERNAL_AHRS_START_UDD:
             AP::externalAHRS().handle_command(ExternalAHRS_command::START_UDD,
@@ -3067,6 +3068,9 @@ MAV_RESULT GCS_MAVLINK::handle_externalAHRS_message(const mavlink_command_int_t 
         default:
             return MAV_RESULT_FAILED;
     }
+#else
+    return MAV_RESULT_FAILED;
+#endif
 }
 
 bool GCS_MAVLINK::get_ap_message_interval(ap_message id, uint16_t &interval_ms) const
