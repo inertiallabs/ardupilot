@@ -414,6 +414,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             // assume same temperature for baro and airspeed
             baro_data.temperature = u.temperature*0.1; // degC
             airspeed_data.temperature = u.temperature*0.1; // degC
+            ins_data.temperature = u.temperature*0.1;
             break;
         }
         case MessageType::UNIT_STATUS2: {
