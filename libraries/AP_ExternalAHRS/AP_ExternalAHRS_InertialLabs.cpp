@@ -282,8 +282,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         case MessageType::BARO_DATA: {
             CHECK_SIZE(u.baro_data);
             baro_data.pressure_pa = u.baro_data.pressure_pa2*2; // Pa
-            baro_data.baro_altitude = state2.baro_alt; // m AVK 07.05.2024
             state2.baro_alt = u.baro_data.baro_alt*0.01; // m
+            baro_data.baro_altitude = state2.baro_alt; // m AVK 07.05.2024
             break;
         }
         case MessageType::MAG_DATA: {
