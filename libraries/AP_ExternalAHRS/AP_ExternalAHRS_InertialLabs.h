@@ -207,6 +207,8 @@ public:
 
     uint16_t buffer_ofs;
     uint8_t buffer[256]; // max for normal message set is 167+8
+    uint8_t tx_count = 0; //AVK 15.05.2024 rx count/4 20ms 50hz 
+    uint8_t tx_buffer[64]; //AVK 14.05.2024 tx buffer for send to Ilab
 
 private:
     AP_HAL::UARTDriver *uart;
@@ -217,6 +219,7 @@ private:
     void update_thread();
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
+    void make_tx_packet(uint8_t *packet) const; //AVK 15.05.2024
 
     // re-sync on header bytes
     void re_sync(void);
