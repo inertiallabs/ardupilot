@@ -663,10 +663,7 @@ void AP_Airspeed::read(uint8_t i)
     default:
         state[i].last_pressure  = fabsf(airspeed_pressure);
         state[i].raw_airspeed   = sqrtf(fabsf(airspeed_pressure) * param[i].ratio);
-     // state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);    //old AVK 12.05.2024
-#if HAL_EXTERNAL_AHRS_ENABLED
-        state[i].healthy        =  AP::externalAHRS().get_airspeed(state[i].airspeed);          // AVK 12.05.2024
-#endif
+        state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);   
         break;
     }
 #endif // HAL_BUILD_AP_PERIPH

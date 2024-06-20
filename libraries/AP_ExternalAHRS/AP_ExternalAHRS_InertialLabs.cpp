@@ -282,8 +282,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         case MessageType::BARO_DATA: {
             CHECK_SIZE(u.baro_data);
             baro_data.pressure_pa = u.baro_data.pressure_pa2*2; // Pa
-            state2.baro_alt = u.baro_data.baro_alt*0.01; // m
             baro_data.baro_altitude = state2.baro_alt; // m AVK 07.05.2024
+            state2.baro_alt = u.baro_data.baro_alt*0.01; // m
             break;
         }
         case MessageType::MAG_DATA: {
@@ -356,9 +356,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
         case MessageType::GNSS_POSITION: {
             CHECK_SIZE(u.gnss_position);
-            gnss_data.lat = u.gnss_position.gnss_lat*1.0e-7; // deg
-            gnss_data.lng = u.gnss_position.gnss_lon*1.0e-7; // deg
-            gnss_data.alt = u.gnss_position.gnss_alt*0.01; // m
+            gnss_data.lat = u.gnss_position.gnss_lat; // deg*1.0e7
+            gnss_data.lng = u.gnss_position.gnss_lon; // deg*1.0e7
+            gnss_data.alt = u.gnss_position.gnss_alt; // mm
             break;
         }
         case MessageType::GNSS_VEL_TRACK: {
@@ -549,7 +549,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "QIHBBffffff",
                                     now_us, gnss_data.pos_timestamp, nav_ins_data.gps_week,
                                     nav_ins_data.satellites_in_view, gnss_data.new_data,
-                                    gnss_data.lat, gnss_data.lng, gnss_data.alt,
+                                    gnss_data.lat*1.0e-7, gnss_data.lng*1.0e-7, gnss_data.alt*0.01,
                                     gnss_data.track_over_ground, gnss_data.hor_speed, gnss_data.ver_speed
                                     );
 
@@ -666,8 +666,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         GOT_MSG(ORIENTATION_ANGLES) &&
         GOT_MSG(VELOCITIES)) {
 
-        float roll, pitch, yaw;
-        state.quat.to_euler(roll, pitch, yaw);
+        float roll, pitch, yaw_deg;
+        state.quat.to_euler(roll, pitch, yaw_deg);
+
+        yaw_deg = fmodf(degrees(yaw_deg), 360.0f);
+        if (yaw_deg < 0.0f) {
+            yaw_deg += 360.0f;
+        }
 
         uint64_t now_us = AP_HAL::micros64();
 
@@ -693,7 +698,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F-------------",
                                     "QIfffffffffHHf",
                                     now_us, nav_ins_data.ms_tow,
-                                    degrees(roll), degrees(pitch), degrees(yaw),
+                                    degrees(roll), degrees(pitch), yaw_deg,
                                     state.velocity.x, state.velocity.y, state.velocity.z,
                                     state.location.lat*1.0e-7, state.location.lng*1.0e-7, state.location.alt*0.01,
                                     state2.unit_status, state2.unit_status2,
@@ -1089,24 +1094,32 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
     status.flags.rejecting_airspeed = (state2.air_data_status & ILABS_AIRDATA_AIRSPEED_FAIL);
 }
 
-bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)  //AVK 10.05.2024
+bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind) //AVK 10.05.2024
 {
-     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED))     //AVK 09.05.2024
-        {wind =  state2.wind_speed; return true;}
+    if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
+        wind =  state2.wind_speed;
+        return true;
+    }
 
     return false;
 }
-bool AP_ExternalAHRS_InertialLabs::get_true_airspeed(float &airspeed)   //AVK 11.05.2024
+
+bool AP_ExternalAHRS_InertialLabs::get_true_airspeed(float &airspeed) //AVK 11.05.2024
 {
-     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED))     //AVK 11.05.2024
-        {airspeed =  state2.true_airspeed; return true;}
+    if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
+        airspeed =  state2.true_airspeed;
+        return true;
+    }
 
     return false;
 }
-bool AP_ExternalAHRS_InertialLabs::get_true_baro_alt(float &baro_alt)    //AVK 11.05.2024
+
+bool AP_ExternalAHRS_InertialLabs::get_true_baro_alt(float &baro_alt) //AVK 11.05.2024
 {
-     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_BARO_ALT))      //AVK 11.05.2024
-        {baro_alt =  state2.baro_alt; return true;}
+    if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_BARO_ALT)) {
+        baro_alt =  state2.baro_alt;
+        return true;
+    }
 
     return false;
 }

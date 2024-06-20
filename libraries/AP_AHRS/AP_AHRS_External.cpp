@@ -139,9 +139,7 @@ void AP_AHRS_External::get_control_limits(float &ekfGndSpdLimit, float &ekfNavVe
 
  bool AP_AHRS_External::wind_estimate(Vector3f &ret) const //AVK 11.05.2024
  {
-   auto &extahrs = AP::externalAHRS();
-
-       return      extahrs.get_estimate_wind(ret);
+    return  AP::externalAHRS().get_estimate_wind(ret);
  }
 
 #endif
