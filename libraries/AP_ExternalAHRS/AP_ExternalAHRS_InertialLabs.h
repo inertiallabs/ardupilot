@@ -86,6 +86,7 @@ public:
         GNSS_ANGLE_POS_TYPE = 0x3A,
         GNSS_HEADING_TIMESTAMP = 0x40,
         GNSS_DOP = 0x42,
+        INS_SOLUTION_STATUS = 0x54,
     };
 
     /*
@@ -197,6 +198,7 @@ public:
             uint16_t vdop;
             uint16_t tdop;
         } gnss_dop; // 10e3
+        uint8_t ins_sol_status;
     };
 
     AP_ExternalAHRS::gps_data_message_t nav_ins_data;
@@ -207,7 +209,7 @@ public:
 
     uint16_t buffer_ofs;
     uint8_t buffer[256]; // max for normal message set is 167+8
-    uint8_t tx_count = 0; //AVK 15.05.2024 rx count/4 20ms 50hz 
+    uint8_t tx_count = 0; //AVK 15.05.2024 rx count/4 20ms 50hz
     uint8_t tx_buffer[64]; //AVK 14.05.2024 tx buffer for send to Ilab
 
 private:
@@ -240,6 +242,7 @@ private:
         Vector3f wind_speed;
         uint16_t air_data_status;
         float supply_voltage;
+        uint8_t ins_sol_status;
     } state2;
 
     struct {
