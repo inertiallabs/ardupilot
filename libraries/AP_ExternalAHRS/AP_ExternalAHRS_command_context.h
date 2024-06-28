@@ -2,7 +2,7 @@
 
 #include "AP_ExternalAHRS_config.h"
 
-#if AP_EXTERNAL_AHRS_VECTORNAV_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED
 
 #include <stdint.h>
 
