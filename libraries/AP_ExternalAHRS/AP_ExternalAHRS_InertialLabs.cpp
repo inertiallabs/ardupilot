@@ -737,6 +737,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         (last_unit_status2 != state2.unit_status2) ||
         (last_air_data_status != state2.air_data_status) ||
         (now_usw - last_critical_msg_ms > dt_critical_usw)) {
+
         // Critical USW message
         if (state2.unit_status & ILABS_UNIT_STATUS_ALIGNMENT_FAIL) {
             GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: Unsuccessful initial alignment");
@@ -1174,6 +1175,15 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     }
 
     mavlink_msg_ekf_status_report_send(link.get_chan(), flags, 0, 0, 0, 0, 0, 0);
+
+    // todo: Move to the separate function
+    // Send status flags
+    const mavlink_eahrs_status_info_t package{last_unit_status,
+                                              last_unit_status2,
+                                              last_air_data_status,
+                                              (uint16_t)(nav_ins_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
+                                              gnss_data.spoof_status};
+    mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
 }
 
 void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const //AVK 28.05.2024
