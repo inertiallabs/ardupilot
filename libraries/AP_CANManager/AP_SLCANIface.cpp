@@ -512,9 +512,7 @@ inline void SLCAN::CANIface::addByte(const uint8_t byte)
 
 void SLCAN::CANIface::update_slcan_port()
 {
-    // This part needs to be rewritten for InertialLabs INS
-    // const bool armed = hal.util->get_soft_armed();
-    const bool armed = false;
+    const bool armed = hal.util->get_soft_armed();
 
     if (_set_by_sermgr) {
         if (armed && _port != nullptr) {

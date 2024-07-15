@@ -1493,8 +1493,9 @@ bool AP_InertialSensor::gyros_consistent(uint8_t threshold) const
 
     const Vector3f &prime_gyro_vec = get_gyro();
 
-    // Dirty hack skip consistent check if external AHRS is the main
-    if (get_gyro(_external_ahrs_gyro_index) == prime_gyro_vec)
+    // skip gyro consistent check if external AHRS is the main
+    if (get_gyro(_external_ahrs_gyro_index) == prime_gyro_vec &&
+        AP_ExternalAHRS::get_singleton()->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
     {
         return true;
     }
@@ -1566,8 +1567,9 @@ bool AP_InertialSensor::accels_consistent(float accel_error_threshold) const
 
     const Vector3f &prime_accel_vec = get_accel();
 
-    // Dirty hack skip consistent check if external AHRS is the main
-    if (get_accel(_external_ahrs_gyro_index) == prime_accel_vec)
+    // skip accel consistent check if external AHRS is the main
+    if (get_accel(_external_ahrs_gyro_index) == prime_accel_vec &&
+        AP_ExternalAHRS::get_singleton()->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
     {
         return true;
     }
@@ -1686,9 +1688,10 @@ bool AP_InertialSensor::accel_calibrated_ok_all() const
             return false;
         }
 
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        if (AP_ExternalAHRS::get_singleton() &&
+        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
+        if (external_ahrs != nullptr &&
             _external_ahrs_accel_index == i)
         {
             continue;
@@ -1868,16 +1871,20 @@ AP_InertialSensor::_init_gyro()
     DEV_PRINTF("\n");
     for (uint8_t k=0; k<num_gyros; k++) {
 
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        if (AP_ExternalAHRS::get_singleton() &&
-            _external_ahrs_gyro_index == k)
+        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
+        if (external_ahrs != nullptr)
         {
-            _gyro_offset(k).set_and_save(Vector3f());
+            if (_external_ahrs_gyro_index == k &&
+                external_ahrs->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+            {
+                _gyro_offset(k).set_and_save(Vector3f());
 #if HAL_INS_TEMPERATURE_CAL_ENABLE
-            caltemp_gyro(k).set_and_save(-300);
+                caltemp_gyro(k).set_and_save(-300);
 #endif
-            continue;
+                continue;
+            }
         }
 #endif
         if (!converged[k]) {

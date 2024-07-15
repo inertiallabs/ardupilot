@@ -70,7 +70,7 @@ class AP_Airspeed
 {
 public:
     friend class AP_Airspeed_Backend;
-    
+
     // constructor
     AP_Airspeed();
 
@@ -151,7 +151,7 @@ public:
 
     // return true if all enabled sensors are healthy
     bool all_healthy(void) const;
-    
+
     // return time in ms of last update
     uint32_t last_update_ms(uint8_t i) const { return state[i].last_update_ms; }
     uint32_t last_update_ms(void) const { return last_update_ms(primary); }
@@ -199,7 +199,7 @@ public:
 
     // get number of sensors
     uint8_t get_num_sensors(void) const { return num_sensors; }
-    
+
     static AP_Airspeed *get_singleton() { return _singleton; }
 
     // return the current corrected pressure, public for AP_Periph
@@ -214,8 +214,9 @@ public:
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED
     void handle_external(const AP_ExternalAHRS::airspeed_data_message_t &pkt);
+    void set_airspeed_enable(bool enable);
 #endif
-    
+
     enum class CalibrationState {
         NOT_STARTED,
         IN_PROGRESS,
@@ -332,7 +333,7 @@ private:
     void Log_Airspeed();
 
     bool add_backend(AP_Airspeed_Backend *backend);
-    
+
     const AP_FixedWing *fixed_wing_parameters;
 
     void convert_per_instance();

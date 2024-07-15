@@ -192,7 +192,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
     // @Bitmask: 0:DisableDCMFallbackFW, 1:DisableDCMFallbackVTOL
     // @User: Advanced
     AP_GROUPINFO("OPTIONS",  18, AP_AHRS, _options, 0),
-    
+
     AP_GROUPEND
 };
 
@@ -316,7 +316,7 @@ void AP_AHRS::reset_gyro_drift(void)
 {
     // support locked access functions to AHRS data
     WITH_SEMAPHORE(_rsem);
-    
+
     // update DCM
 #if AP_AHRS_DCM_ENABLED
     dcm.reset_gyro_drift();
@@ -403,7 +403,7 @@ void AP_AHRS::update(bool skip_ins_update)
 #if AP_AHRS_EXTERNAL_ENABLED
     update_external();
 #endif
-    
+
     if (_ekf_type == 2) {
         // if EK2 is primary then run EKF2 first to give it CPU
         // priority
@@ -818,7 +818,13 @@ bool AP_AHRS::_wind_estimate(Vector3f &wind) const
 
 #if AP_AHRS_EXTERNAL_ENABLED
     case EKFType::EXTERNAL:
-        return external.wind_estimate(wind);
+        if (AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
+            return external.wind_estimate(wind);
+        } else if (EKF3.get_enable() && EKF3.healthy()) {
+            return EKF3.getWind(wind);
+        } else if (dcm.healthy()) {
+            return dcm.wind_estimate(wind);
+        }
 #endif
     }
     return false;
@@ -1986,7 +1992,7 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
             // don't fallback
             return ret;
         }
-        
+
         // Handle loss of global position when we still have a GPS fix
         if (hal.util->get_soft_armed() &&
             (_gps_use != GPSUse::Disable) &&
@@ -2754,7 +2760,7 @@ bool AP_AHRS::resetHeightDatum(void)
 {
     // support locked access functions to AHRS data
     WITH_SEMAPHORE(_rsem);
-    
+
     switch (ekf_type()) {
 
 #if AP_AHRS_DCM_ENABLED
@@ -3277,7 +3283,7 @@ void AP_AHRS::check_lane_switch(void)
     case EKFType::EXTERNAL:
         break;
 #endif
-        
+
 #if HAL_NAVEKF2_AVAILABLE
     case EKFType::TWO:
         EKF2.checkLaneSwitch();
@@ -3309,7 +3315,7 @@ void AP_AHRS::request_yaw_reset(void)
     case EKFType::EXTERNAL:
         break;
 #endif
-        
+
 #if HAL_NAVEKF2_AVAILABLE
     case EKFType::TWO:
         EKF2.requestYawReset();
@@ -3339,7 +3345,7 @@ uint8_t AP_AHRS::get_posvelyaw_source_set() const
     return EKF3.get_active_source_set();
 #else
     return 0;
-#endif   
+#endif
 }
 
 void AP_AHRS::Log_Write()
@@ -3380,7 +3386,7 @@ bool AP_AHRS::using_noncompass_for_yaw(void) const
 #if AP_AHRS_EXTERNAL_ENABLED
     case EKFType::EXTERNAL:
 #endif
-        return false; 
+        return false;
     }
     // since there is no default case above, this is unreachable
     return false;

@@ -30,7 +30,7 @@ AP_InertialSensor_Backend::AP_InertialSensor_Backend(AP_InertialSensor &imu) :
 void AP_InertialSensor_Backend::notify_accel_fifo_reset(uint8_t instance)
 {
     _imu._sample_accel_count[instance] = 0;
-    _imu._sample_accel_start_us[instance] = 0;    
+    _imu._sample_accel_start_us[instance] = 0;
 }
 
 /*
@@ -91,13 +91,20 @@ void AP_InertialSensor_Backend::_update_sensor_rate(uint16_t &count, uint32_t &s
     }
 }
 
-void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vector3f &accel) 
+void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vector3f &accel)
 {
     /*
       accel calibration is always done in sensor frame with this
       version of the code. That means we apply the rotation after the
       offsets and scaling.
      */
+
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    // Inertial Labs AHRS does not require rotation
+    if (_imu._external_ahrs_accel_index == instance) {
+            return;
+    }
+#endif
 
     // rotate for sensor orientation
     accel.rotate(_imu._accel_orientation[instance]);
@@ -134,8 +141,16 @@ void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vect
     accel.rotate(_imu._board_orientation);
 }
 
-void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vector3f &gyro) 
+void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vector3f &gyro)
 {
+
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    // Inertial Labs AHRS does not require rotation
+    if (_imu._external_ahrs_gyro_index == instance) {
+            return;
+    }
+#endif
+
     // rotate for sensor orientation
     gyro.rotate(_imu._gyro_orientation[instance]);
 
@@ -144,7 +159,7 @@ void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vecto
         _imu.tcal(instance).update_gyro_learning(gyro, _imu.get_temperature(instance));
     }
 #endif
-    
+
     if (!_imu._calibrating_gyro) {
 
 #if HAL_INS_TEMPERATURE_CAL_ENABLE
@@ -300,7 +315,7 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
     if (hal.opticalflow) {
         hal.opticalflow->push_gyro(gyro.x, gyro.y, dt);
     }
-    
+
     // compute delta angle
     Vector3f delta_angle = (gyro + _imu._last_raw_gyro[instance]) * 0.5f * dt;
 
@@ -388,7 +403,7 @@ void AP_InertialSensor_Backend::_notify_new_delta_angle(uint8_t instance, const 
     if (hal.opticalflow) {
         hal.opticalflow->push_gyro(gyro.x, gyro.y, dt);
     }
-    
+
     // compute delta angle, including corrections
     Vector3f delta_angle = gyro * dt;
 
@@ -548,8 +563,8 @@ void AP_InertialSensor_Backend::_notify_new_accel_raw_sample(uint8_t instance,
 #if AP_MODULE_SUPPORTED
     // call accel_sample hook if any
     AP_Module::call_hook_accel_sample(instance, dt, accel, fsync_set);
-#endif    
-    
+#endif
+
     _imu.calc_vibration_and_clipping(instance, accel, dt);
 
     {
@@ -563,7 +578,7 @@ void AP_InertialSensor_Backend::_notify_new_accel_raw_sample(uint8_t instance,
             _imu._delta_velocity_acc_dt[instance] = 0;
             dt = 0;
         }
-        
+
         // delta velocity
         _imu._delta_velocity_acc[instance] += accel * dt;
         _imu._delta_velocity_acc_dt[instance] += dt;
@@ -626,8 +641,8 @@ void AP_InertialSensor_Backend::_notify_new_delta_velocity(uint8_t instance, con
 #if AP_MODULE_SUPPORTED
     // call accel_sample hook if any
     AP_Module::call_hook_accel_sample(instance, dt, accel, false);
-#endif    
-    
+#endif
+
     _imu.calc_vibration_and_clipping(instance, accel, dt);
 
     {
@@ -641,7 +656,7 @@ void AP_InertialSensor_Backend::_notify_new_delta_velocity(uint8_t instance, con
             _imu._delta_velocity_acc_dt[instance] = 0;
             dt = 0;
         }
-        
+
         // delta velocity including corrections
         _imu._delta_velocity_acc[instance] += accel * dt;
         _imu._delta_velocity_acc_dt[instance] += dt;
@@ -747,9 +762,18 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
     }
     _imu._temperature[instance] = temperature;
 
+    uint8_t heater_imu_instance = AP_HEATER_IMU_INSTANCE;
+
+#if HAL_EXTERNAL_AHRS_ENABLED
+    // use an internal autopilot temperature sensor for temperature control instead of an external AHRS temperature sensor
+    if ((sizeof(_imu._temperature) / sizeof(_imu._temperature[0])) >= 2) {
+        heater_imu_instance = 1;
+    }
+#endif
+
 #if HAL_HAVE_IMU_HEATER
     /* give the temperature to the control loop in order to keep it constant*/
-    if (instance == AP_HEATER_IMU_INSTANCE) {
+    if (instance == heater_imu_instance) {
         AP_BoardConfig *bc = AP::boardConfig();
         if (bc) {
             bc->set_imu_temp(temperature);
@@ -762,7 +786,7 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
   common gyro update function for all backends
  */
 void AP_InertialSensor_Backend::update_gyro(uint8_t instance) /* front end */
-{    
+{
     WITH_SEMAPHORE(_sem);
 
     if ((1U<<instance) & _imu.imu_kill_mask) {
@@ -799,7 +823,7 @@ void AP_InertialSensor_Backend::update_gyro(uint8_t instance) /* front end */
   common accel update function for all backends
  */
 void AP_InertialSensor_Backend::update_accel(uint8_t instance) /* front end */
-{    
+{
     WITH_SEMAPHORE(_sem);
 
     if ((1U<<instance) & _imu.imu_kill_mask) {
@@ -809,7 +833,7 @@ void AP_InertialSensor_Backend::update_accel(uint8_t instance) /* front end */
         _publish_accel(instance, _imu._accel_filtered[instance]);
         _imu._new_accel_data[instance] = false;
     }
-    
+
     // possibly update filter frequency
     if (_last_accel_filter_hz != _accel_filter_cutoff()) {
         _imu._accel_filter[instance].set_cutoff_frequency(_accel_raw_sample_rate(instance), _accel_filter_cutoff());

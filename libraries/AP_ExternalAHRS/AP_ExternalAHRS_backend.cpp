@@ -33,6 +33,11 @@ uint16_t AP_ExternalAHRS_backend::get_rate(void) const
     return frontend.get_IMU_rate();
 }
 
+uint16_t AP_ExternalAHRS_backend::get_eahrs_log_rate(void) const
+{
+    return frontend.get_log_rate();
+}
+
 bool AP_ExternalAHRS_backend::option_is_set(AP_ExternalAHRS::OPTIONS option) const
 {
     return frontend.option_is_set(option);

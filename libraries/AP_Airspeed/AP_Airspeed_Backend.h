@@ -32,7 +32,7 @@ class AP_Airspeed_Backend {
 public:
     AP_Airspeed_Backend(AP_Airspeed &frontend, uint8_t instance);
     virtual ~AP_Airspeed_Backend();
-    
+
     // probe and initialise the sensor
     virtual bool init(void) = 0;
 
@@ -51,6 +51,7 @@ public:
     virtual void handle_msp(const MSP::msp_airspeed_data_message_t &pkt) {}
 #if AP_AIRSPEED_EXTERNAL_ENABLED
     virtual void handle_external(const AP_ExternalAHRS::airspeed_data_message_t &pkt) {}
+    virtual void set_airspeed_enable(bool enable) {}
 #endif
 
 #if AP_AIRSPEED_HYGROMETER_ENABLE
@@ -128,7 +129,7 @@ protected:
         NMEA     = 0x09,
         ASP5033  = 0x0A,
     };
-    
+
 private:
     AP_Airspeed &frontend;
     uint8_t instance;

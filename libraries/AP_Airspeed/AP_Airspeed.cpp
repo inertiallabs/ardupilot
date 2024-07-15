@@ -663,7 +663,7 @@ void AP_Airspeed::read(uint8_t i)
     default:
         state[i].last_pressure  = fabsf(airspeed_pressure);
         state[i].raw_airspeed   = sqrtf(fabsf(airspeed_pressure) * param[i].ratio);
-        state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);   
+        state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);
         break;
     }
 #endif // HAL_BUILD_AP_PERIPH
@@ -753,6 +753,21 @@ void AP_Airspeed::handle_external(const AP_ExternalAHRS::airspeed_data_message_t
         }
     }
 }
+
+// Set to true if external AHRS transmit calculated airspeed instead of differential pressure
+void AP_Airspeed::set_airspeed_enable(bool enable)
+{
+    if (!lib_enabled()) {
+        return;
+    }
+
+    for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
+        if (param[i].type == TYPE_EXTERNAL && sensor[i]) {
+            sensor[i]->set_airspeed_enable(enable);
+        }
+    }
+}
+
 #endif
 
 #if HAL_LOGGING_ENABLED

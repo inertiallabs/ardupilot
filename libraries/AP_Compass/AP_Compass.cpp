@@ -2040,13 +2040,17 @@ bool Compass::configured(uint8_t i)
 
     // exit immediately if all offsets are zero
     if (is_zero(get_offsets(i).length())) {
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
+        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
         StateIndex id = _get_state_id(Priority(i));
-        if (!_state[id].external ||
-        !AP_ExternalAHRS::get_singleton())
+        if (external_ahrs == nullptr)
         {
-            return false;
+            if (!_state[id].external &&
+                !external_ahrs->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+            {
+                return false;
+            }
         }
 #else
         return false;
