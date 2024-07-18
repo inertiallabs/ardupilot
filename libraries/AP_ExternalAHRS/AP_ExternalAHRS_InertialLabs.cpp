@@ -71,6 +71,12 @@ AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_fro
         AP_HAL::panic("InertialLabs Failed to start ExternalAHRS update thread");
     }
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs ExternalAHRS initialised");
+
+    if (get_rate() < 50) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Inertial Labs data rate is set below 50 Hz"); // 50 Hz is the minimum data rate of the external AHRS for the ArduPilot to operate properly
+    } else if (get_rate() > 200) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Inertial Labs data rate is set above 200 Hz"); // 200 Hz is the maximum data rate of the Inertial Labs INS
+    }
 }
 
 /*
@@ -953,7 +959,9 @@ int8_t AP_ExternalAHRS_InertialLabs::get_port(void) const
 bool AP_ExternalAHRS_InertialLabs::healthy(void) const
 {
     WITH_SEMAPHORE(state.sem);
-    return AP_HAL::millis() - last_att_msg_ms < 100;
+    uint16_t data_rate = get_rate();
+    uint32_t dt_limit = (1.0f / (float)data_rate) * 1.0e3f * 10.0f; // set unhealthy if the ArduPilot has not received 10 packets of external AHRS
+    return AP_HAL::millis() - last_att_msg_ms < dt_limit;
 }
 
 bool AP_ExternalAHRS_InertialLabs::initialised(void) const

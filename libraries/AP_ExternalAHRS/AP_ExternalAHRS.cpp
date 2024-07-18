@@ -125,7 +125,6 @@ void AP_ExternalAHRS::init(void)
 
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
     case DevType::InertialLabs:
-        rate.set(200); // recommended rate for operating with Inertial Labs INS
         backend = new AP_ExternalAHRS_InertialLabs(this, state);
         return;
 #endif
