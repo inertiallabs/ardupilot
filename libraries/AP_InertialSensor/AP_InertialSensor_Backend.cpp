@@ -102,7 +102,7 @@ void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vect
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
     // Inertial Labs AHRS does not require rotation
     if (_imu._external_ahrs_accel_index == instance) {
-            return;
+        return;
     }
 #endif
 
@@ -147,7 +147,7 @@ void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vecto
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
     // Inertial Labs AHRS does not require rotation
     if (_imu._external_ahrs_gyro_index == instance) {
-            return;
+        return;
     }
 #endif
 

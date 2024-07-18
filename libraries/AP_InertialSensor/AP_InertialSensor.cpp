@@ -752,7 +752,9 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
 
     _gyro_id(_gyro_count).set((int32_t) id);
 
-    if (isExternalAhrs)
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+    if (isExternalAhrs && disableCal)
     {
         _gyro_offset(_gyro_count).set_and_save(Vector3f());
         _gyro_id(_gyro_count).save();
@@ -761,6 +763,7 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
 #endif
         _gyro_cal_ok[_gyro_count] = true;
     }
+#endif
 
     // check have we got this id in eeprom and load the coefficients for this from memory
     for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); ++i) {
@@ -837,7 +840,9 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
 
     _accel_id(_accel_count).set((int32_t) id);
 
-    if (isExternalAhrs)
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+    if (isExternalAhrs && disableCal)
     {
         _accel_scale(_accel_count).set_and_save(Vector3f(1, 1, 1));
         _accel_offset(_accel_count).set_and_save(Vector3f());
@@ -848,6 +853,7 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
 #endif
         _accel_id_ok[_accel_count] = true;
     }
+#endif
 
     // check have we got this id in eeprom and load the coefficients for this from memory
     for (uint8_t i = 0; i < (INS_MAX_INSTANCES-INS_AUX_INSTANCES); ++i) {
@@ -1493,12 +1499,14 @@ bool AP_InertialSensor::gyros_consistent(uint8_t threshold) const
 
     const Vector3f &prime_gyro_vec = get_gyro();
 
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
     // skip gyro consistent check if external AHRS is the main
-    if (get_gyro(_external_ahrs_gyro_index) == prime_gyro_vec &&
-        AP_ExternalAHRS::get_singleton()->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+    if (get_gyro(_external_ahrs_gyro_index) == prime_gyro_vec && disableCal)
     {
         return true;
     }
+#endif
 
     for(uint8_t i=0; i<gyro_count; i++) {
         if (!use_gyro(i)) {
@@ -1567,12 +1575,14 @@ bool AP_InertialSensor::accels_consistent(float accel_error_threshold) const
 
     const Vector3f &prime_accel_vec = get_accel();
 
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
     // skip accel consistent check if external AHRS is the main
-    if (get_accel(_external_ahrs_gyro_index) == prime_accel_vec &&
-        AP_ExternalAHRS::get_singleton()->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+    if (get_accel(_external_ahrs_gyro_index) == prime_accel_vec && disableCal)
     {
         return true;
     }
+#endif
 
     for(uint8_t i=0; i<accel_count; i++) {
         if (!use_accel(i)) {
@@ -1690,9 +1700,8 @@ bool AP_InertialSensor::accel_calibrated_ok_all() const
 
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
-        if (external_ahrs != nullptr &&
-            _external_ahrs_accel_index == i)
+        bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+        if (_external_ahrs_accel_index == i && disableCal)
         {
             continue;
         }
@@ -1873,18 +1882,14 @@ AP_InertialSensor::_init_gyro()
 
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
-        if (external_ahrs != nullptr)
+        bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+        if (_external_ahrs_gyro_index == k && disableCal)
         {
-            if (_external_ahrs_gyro_index == k &&
-                external_ahrs->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
-            {
-                _gyro_offset(k).set_and_save(Vector3f());
+            _gyro_offset(k).set_and_save(Vector3f());
 #if HAL_INS_TEMPERATURE_CAL_ENABLE
-                caltemp_gyro(k).set_and_save(-300);
+            caltemp_gyro(k).set_and_save(-300);
 #endif
-                continue;
-            }
+            continue;
         }
 #endif
         if (!converged[k]) {
@@ -2451,10 +2456,10 @@ void AP_InertialSensor::_acal_save_calibrations()
 {
     Vector3f bias, gain;
     for (uint8_t i=0; i<_accel_count; i++) {
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        if (AP_ExternalAHRS::get_singleton() &&
-            _external_ahrs_accel_index == i)
+        bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+        if (_external_ahrs_accel_index == i && disableCal)
         {
             _accel_offset(i).set_and_save(Vector3f());
             _accel_scale(i).set_and_save(Vector3f(1, 1, 1));
@@ -2736,10 +2741,10 @@ MAV_RESULT AP_InertialSensor::simple_accel_cal()
     if (result == MAV_RESULT_ACCEPTED) {
         DEV_PRINTF("\nPASSED\n");
         for (uint8_t k=0; k<num_accels; k++) {
-#if HAL_EXTERNAL_AHRS_ENABLED
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
             // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-            if (AP_ExternalAHRS::get_singleton() &&
-                _external_ahrs_accel_index == k)
+            bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+            if (_external_ahrs_accel_index == k && disableCal)
             {
                 _accel_offset(k).set_and_save(Vector3f());
                 _accel_scale(k).set_and_save(Vector3f(1, 1, 1));
