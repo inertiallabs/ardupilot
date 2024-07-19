@@ -124,6 +124,12 @@ protected:
     // tell if instance is an external compass
     bool is_external(uint8_t instance);
 
+    // set EAHRS state for an instance
+    void set_EAHRS(uint8_t instance, bool isEAHRS);
+
+    // tell if instance is an External AHRS compass
+    bool is_EAHRS(uint8_t instance);
+
     // set rotation of an instance
     void set_rotation(uint8_t instance, enum Rotation rotation);
 

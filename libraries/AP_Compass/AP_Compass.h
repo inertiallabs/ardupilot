@@ -571,6 +571,12 @@ private:
         // accumulated samples, protected by _sem, used by AP_Compass_Backend
         Vector3f accum;
         uint32_t accum_count;
+
+#if HAL_EXTERNAL_AHRS_ENABLED
+        // set to true if this is an external AHRS compass
+        bool isEAHRS;
+#endif
+
         // We only copy persistent params
         void copy_from(const mag_state& state);
     };

@@ -2042,12 +2042,11 @@ bool Compass::configured(uint8_t i)
     if (is_zero(get_offsets(i).length())) {
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
-        StateIndex id = _get_state_id(Priority(i));
-        if (external_ahrs == nullptr)
+        if (!AP_ExternalAHRS::get_singleton())
         {
-            if (!_state[id].external &&
-                !external_ahrs->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+            StateIndex id = _get_state_id(Priority(i));
+            bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+            if (!_state[id].external && !_state[id].isEAHRS && !disableCal)
             {
                 return false;
             }
@@ -2143,17 +2142,15 @@ void Compass::motor_compensation_type(const uint8_t comp_type)
 
 bool Compass::consistent() const
 {
-    // Dirty hack skip consistent check if external AHRS is the main
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+    // skip compass consistent check if external AHRS is the main
     const StateIndex id = _get_state_id(Priority(0));
-    bool hasEAHRS = false;
-#if HAL_EXTERNAL_AHRS_ENABLED
-    hasEAHRS = AP_ExternalAHRS::get_singleton();
-#endif
-
-    if (_state[id].external && hasEAHRS)
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+    if (_state[id].external && _state[id].isEAHRS && disableCal)
     {
         return true;
     }
+#endif
 
     const Vector3f &primary_mag_field { get_field() };
     const Vector2f &primary_mag_field_xy { primary_mag_field.xy() };

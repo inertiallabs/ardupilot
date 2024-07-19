@@ -16,6 +16,7 @@
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <AP_HAL/AP_HAL.h>
 #include "AP_Compass_ExternalAHRS.h"
+#include <AP_Math/AP_Math.h>
 
 #if AP_COMPASS_EXTERNALAHRS_ENABLED
 
@@ -26,6 +27,18 @@ AP_Compass_ExternalAHRS::AP_Compass_ExternalAHRS(uint8_t port)
 
     set_dev_id(instance, devid);
     set_external(instance, true);
+    set_EAHRS(instance, true);
+    set_rotation(instance, ROTATION_NONE);
+
+    bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+    if (disableCal) {
+        _compass.set_and_save_offsets(instance, Vector3f());
+#if AP_COMPASS_DIAGONALS_ENABLED
+        _compass.set_and_save_diagonals(instance, Vector3f());
+        _compass.set_and_save_offdiagonals(instance, Vector3f());
+#endif
+        _compass.set_and_save_scale_factor(instance, 1);
+    }
 
     // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
     if (AP_ExternalAHRS::get_singleton())

@@ -204,13 +204,11 @@ bool Compass::_accept_calibration(uint8_t i)
 
 #if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
         // Workaround for InertialLabs AHRS: Device no need calibration and ready to use as is
-        const AP_ExternalAHRS *external_ahrs = AP_ExternalAHRS::get_singleton();
-        if (external_ahrs != nullptr)
+        if (AP_ExternalAHRS::get_singleton())
         {
             StateIndex id = _get_state_id(prio);
-            if (id < COMPASS_MAX_INSTANCES &&
-                _state[id].external &&
-                external_ahrs->check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB))
+            bool disableCal = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_CLB);
+            if (id < COMPASS_MAX_INSTANCES && _state[id].external && _state[id].isEAHRS && disableCal)
             {
                 set_and_save_offsets(i, Vector3f());
 #if AP_COMPASS_DIAGONALS_ENABLED

@@ -246,6 +246,19 @@ bool AP_Compass_Backend::is_external(uint8_t instance)
     return _compass._state[Compass::StateIndex(instance)].external;
 }
 
+/*
+  set EAHRS for an instance
+*/
+void AP_Compass_Backend::set_EAHRS(uint8_t instance, bool isEAHRS)
+{
+    _compass._state[Compass::StateIndex(instance)].isEAHRS = isEAHRS;
+}
+
+bool AP_Compass_Backend::is_EAHRS(uint8_t instance)
+{
+    return _compass._state[Compass::StateIndex(instance)].isEAHRS;
+}
+
 // set rotation of an instance
 void AP_Compass_Backend::set_rotation(uint8_t instance, enum Rotation rotation)
 {
