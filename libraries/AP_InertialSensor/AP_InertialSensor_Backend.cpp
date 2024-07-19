@@ -762,6 +762,8 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
     }
     _imu._temperature[instance] = temperature;
 
+#if HAL_HAVE_IMU_HEATER
+
     uint8_t heater_imu_instance = AP_HEATER_IMU_INSTANCE;
 
 #if HAL_EXTERNAL_AHRS_ENABLED
@@ -771,7 +773,6 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
     }
 #endif
 
-#if HAL_HAVE_IMU_HEATER
     /* give the temperature to the control loop in order to keep it constant*/
     if (instance == heater_imu_instance) {
         AP_BoardConfig *bc = AP::boardConfig();

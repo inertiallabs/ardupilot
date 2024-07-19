@@ -461,7 +461,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         last_att_msg_ms = now_ms;
     }
 
-    if (!(ins_data.unit_status & (IL_USW::ACCEL_FAIL | IL_USW::GYRO_FAIL))) {
+    if (!(ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) &&
+        !(ins_data.unit_status & (IL_USW::ACCEL_FAIL | IL_USW::GYRO_FAIL))) {
         // use IL INS IMU outputs in the ArduPilot algorithm
         ardu_imu_data.accel = sensors_data.accel;
         ardu_imu_data.gyro = sensors_data.gyro;
