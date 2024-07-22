@@ -47,6 +47,26 @@ void AP_GPS_MAV::handle_msg(const mavlink_message_t &msg)
             mavlink_gps_input_t packet;
             mavlink_msg_gps_input_decode(&msg, &packet);
 
+#if HAL_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
+            uint8_t primary_gps_instance = gps.primary_sensor();
+            AP_GPS::GPS_Type primary_gps_type = gps.get_type(primary_gps_instance);
+            if (primary_gps_type == AP_GPS::GPS_TYPE_EXTERNAL_AHRS) {
+                bool isTransmitGPS = AP::externalAHRS().check_eahrs_option(AP_ExternalAHRS::OPTIONS::ILAB_trans_GPS_INPUT);
+                if (gps.is_healthy(primary_gps_instance) && isTransmitGPS) {
+                    ExternalAHRS_command_data data;
+                    data.x = packet.lat;
+                    data.y = packet.lon;
+                    data.param1 = 0.0f;
+                    data.param2 = 0.0f;
+                    data.param3 = 0.0f;
+                    data.param4 = 0.0f;
+                    data.z = 0.0f;
+                    AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION, data);
+                    break;
+                }
+            }
+#endif
+
             bool have_alt    = ((packet.ignore_flags & GPS_INPUT_IGNORE_FLAG_ALT) == 0);
             bool have_hdop   = ((packet.ignore_flags & GPS_INPUT_IGNORE_FLAG_HDOP) == 0);
             bool have_vdop   = ((packet.ignore_flags & GPS_INPUT_IGNORE_FLAG_VDOP) == 0);
