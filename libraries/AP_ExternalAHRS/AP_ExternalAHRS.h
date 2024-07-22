@@ -183,7 +183,12 @@ public:
         ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
         ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
         ILAB_trans_diff_pressure = (1U << 4), //AVK 15.05.2024 Enable send diff_pressure to ILab
+        ILAB_trans_GPS_INPUT = (1U << 5), // Enable transmission of GPS_INPUT [232] MAVLink message to IL INS
     };
+
+    bool check_eahrs_option(OPTIONS option) const {
+        return option_is_set(option);
+    }
 
 protected:
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }

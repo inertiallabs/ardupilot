@@ -71,7 +71,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Disable calibration and pre-arm checks of IL INS,2:Use IL INS baro altitude,3:Use IL INS airspeed and wind estimation,4:Transmit static and diff pressure to IL INS
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Disable calibration and pre-arm checks of IL INS,2:Use IL INS baro altitude,3:Use IL INS airspeed and wind estimation,4:Transmit static and diff pressure to IL INS,5:Transmit GPS_INPUT MAVLink message to IL INS
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 
