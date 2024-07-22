@@ -185,7 +185,7 @@ public:
         ILAB_DISABLE_CLB = (1U << 1), // Disable IL INS sensors calibration and pre-arm checks
         ILAB_USE_AIRSPEED = (1U << 2), // Use IL INS airspeed and wind estimation instead of calculated by ArduPilot
         ILAB_trans_diff_pressure = (1U << 3), // Enable transmission of static and and diff. pressure data to IL INS
-        Reserved = (1U << 4), // reserved to enable transmission of GPS_INPUT [232] MAVLink message to IL INS
+        ILAB_trans_GPS_INPUT = (1U << 4), // Enable transmission of GPS_INPUT [232] MAVLink message to IL INS
         ILAB_SEND_STATUS = (1U << 5), // Send IL INS status messages to GCS
     };
 
