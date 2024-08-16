@@ -184,6 +184,7 @@ public:
         ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
         ILAB_trans_diff_pressure = (1U << 4), //AVK 15.05.2024 Enable send diff_pressure to ILab
         ILAB_trans_GPS_INPUT = (1U << 5), // Enable transmission of GPS_INPUT [232] MAVLink message to IL INS
+        ILAB_disable_ahrs_rotation = (1U << 6), // Disable AHRS rotation to an AHRS_TRIM_[X, Y, Z] angles
     };
 
     bool check_eahrs_option(OPTIONS option) const {
