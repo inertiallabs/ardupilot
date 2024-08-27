@@ -240,6 +240,7 @@ private:
         float differential_pressure;
         float true_airspeed;
         Vector3f wind_speed;
+        float airspeed_sf;
         uint16_t air_data_status;
         float supply_voltage;
         uint8_t ins_sol_status;
