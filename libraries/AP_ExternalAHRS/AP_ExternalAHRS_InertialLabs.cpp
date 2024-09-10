@@ -459,6 +459,16 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 state2.ins_sol_status = u.ins_sol_status;
                 break;
             }
+            case MessageType::NEW_AIDING_DATA: {
+                CHECK_SIZE(u.new_aiding_data);
+                state2.new_aiding_data = u.new_aiding_data;
+                break;
+            }
+            case MessageType::EXT_SPEED: {
+                CHECK_SIZE(u.external_speed);
+                state2.external_speed = u.external_speed * 0.5144 * 0.01f;
+                break;
+            }
         }
 
         if (msg_len == 0) {

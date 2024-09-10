@@ -87,6 +87,8 @@ public:
         GNSS_HEADING_TIMESTAMP = 0x40,
         GNSS_DOP = 0x42,
         INS_SOLUTION_STATUS = 0x54,
+        NEW_AIDING_DATA = 0x65,
+        EXT_SPEED = 0x61,
     };
 
     /*
@@ -199,6 +201,8 @@ public:
             uint16_t tdop;
         } gnss_dop; // 10e3
         uint8_t ins_sol_status;
+        uint16_t new_aiding_data;
+        int16_t external_speed;
     };
 
     AP_ExternalAHRS::gps_data_message_t nav_ins_data;
@@ -244,6 +248,8 @@ private:
         uint16_t air_data_status;
         float supply_voltage;
         uint8_t ins_sol_status;
+        uint16_t new_aiding_data;
+        float external_speed;
     } state2;
 
     struct {
