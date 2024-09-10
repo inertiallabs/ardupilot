@@ -1188,44 +1188,34 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
 }
 
-void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const //AVK 28.05.2024
+void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const
 {
-    static int div = 0;
-
     uint8_t *tmp_ptr = packet;
     uint8_t hdr[] = {0xAA, 0x55, 0x01, 0x62}; // 0xAA 0x55 - packet header, 0x01 - packet type, 0x62 - packet ID
-    uint32_t tmp;
-    float press ;
+    int16_t new_data;
+    float external_speed;
 
-    uint16_t len_packet = 1/*type*/ + 1/*ID*/ + 2/*lenght*/ + 1/*meas num*/ + 1/*meas list*/ + \
-                        sizeof(uint32_t/*absolute pressure*/) + \
-                        sizeof(int32_t)/*differential pressure*/ + \
-                        sizeof(uint16_t)/*checksum*/;
+    uint16_t len_packet = 1/*type*/ + 1/*ID*/ + 2/*lenght*/ + 1/*meas num*/ + 1/*meas list*/ + sizeof(int16_t)/*airspeed*/ + sizeof(uint16_t)/*checksum*/;
 
-  if (!(div & 3)) { // 200 Hz / 4 = 50 Hz send packet to ILab
-        memcpy(tmp_ptr, hdr, sizeof(hdr)); // header
-        tmp_ptr += sizeof(hdr);
-        memcpy(tmp_ptr, &len_packet, sizeof(len_packet));
-        tmp_ptr += sizeof(len_packet);
-        *tmp_ptr++ = 0x01;
-        *tmp_ptr++ = 0x12;
-        press = AP::baro().get_pressure();
-        tmp = (uint32_t)(press); // static pressure in Pa
-        memcpy(tmp_ptr, &tmp, sizeof(tmp));
-        tmp_ptr += sizeof(tmp);
-        press = AP::airspeed()->get_differential_pressure();
-        tmp = (int32_t)(press * 10.0); // differential pressure in Pa
-        memcpy(tmp_ptr, &tmp, sizeof(tmp));
-        tmp_ptr += sizeof(tmp);
+    memcpy(tmp_ptr, hdr, sizeof(hdr)); // header
+    tmp_ptr += sizeof(hdr);
+    memcpy(tmp_ptr, &len_packet, sizeof(len_packet));
+    tmp_ptr += sizeof(len_packet);
+    // Air speed , 0x02
+    *tmp_ptr++ = 0x01;
+    *tmp_ptr++ = 0x02;
+    external_speed = floor(AP::airspeed()->get_raw_airspeed() * 1.94384449f * 100.0f + 0.5f);
+    if (external_speed > 32267.0f)  external_speed = 32267.0f;
+    if (external_speed < -32268.0f) external_speed = -32268.0f;
+    new_data = external_speed;
+    memcpy(tmp_ptr, &new_data, sizeof(new_data));
+    tmp_ptr += sizeof(new_data);
 
-        uint16_t tmp_crc = crc_sum_of_bytes_16(packet + 2, (tmp_ptr - packet) - 2); // -0xAA55
-        memcpy(tmp_ptr, &tmp_crc, sizeof(tmp_crc)); // checksum
-        tmp_ptr += sizeof(tmp_crc);
+    uint16_t tmp_crc = crc_sum_of_bytes_16(packet + 2, (tmp_ptr - packet) - 2); // -0xAA55
+    memcpy(tmp_ptr, &tmp_crc, sizeof(tmp_crc)); // checksum
+    tmp_ptr += sizeof(tmp_crc);
 
-        uart->write(packet, (tmp_ptr - packet));
-    }
-
-    div++;
+    uart->write(packet, (tmp_ptr - packet));
 }
 
 void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
