@@ -632,16 +632,18 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VWE: Wind velocity east
         // @Field: ArspSF: The scale factor (SF) for measured air speed
         // @Field: ADU: Air Data Unit status
+        // @Field: NewAD: New Aiding Data
+        // @Field: ExtV: External air or ground speed
 
-        AP::logger().WriteStreaming("ILB3", "TimeUS,GMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,ArspSF,ADU",
-                                    "s-PPOmnnnn-",
-                                    "F----------",
-                                    "QIffffffffH",
+        AP::logger().WriteStreaming("ILB3", "TimeUS,GMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,ArspSF,ADU,NewAD,ExtS",
+                                    "s-PPOmnnnn--n",
+                                    "F------------",
+                                    "QIffffffffHHf",
                                     now_us, nav_ins_data.ms_tow,
                                     baro_data.pressure_pa, airspeed_data.differential_pressure, baro_data.temperature,
                                     state2.baro_alt, state2.true_airspeed,
                                     state2.wind_speed.x, state2.wind_speed.y, state2.airspeed_sf,
-                                    state2.air_data_status);
+                                    state2.air_data_status, state2.new_aiding_data, state2.external_speed);
     }
 
     if (GOT_MSG(MAG_DATA)) {
@@ -709,17 +711,18 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: USW: USW1
         // @Field: USW2: USW2
         // @Field: Vdc: Supply voltage
+        // @Field: ISS: INS Navigation (Solution) Status
 
-        AP::logger().WriteStreaming("ILB7", "TimeUS,GMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc",
-                                    "s-dddnnnDUm--v",
-                                    "F-------------",
-                                    "QIfffffffffHHf",
+        AP::logger().WriteStreaming("ILB7", "TimeUS,GMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc,ISS",
+                                    "s-dddnnnDUm--v-",
+                                    "F--------------",
+                                    "QIfffffffffHHfB",
                                     now_us, nav_ins_data.ms_tow,
                                     degrees(roll), degrees(pitch), yaw_deg,
                                     state.velocity.x, state.velocity.y, state.velocity.z,
                                     state.location.lat*1.0e-7, state.location.lng*1.0e-7, state.location.alt*0.01,
                                     state2.unit_status, state2.unit_status2,
-                                    state2.supply_voltage);
+                                    state2.supply_voltage, state2.ins_sol_status);
 
         // @LoggerMessage: ILB8
         // @Description: InertialLabs AHRS data8
