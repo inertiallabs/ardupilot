@@ -490,7 +490,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB1
         // @Description: InertialLabs AHRS data1
         // @Field: TimeUS: Time since system startup
-        // @Field: GMS: GPS INS time (round)
+        // @Field: IMS: GPS INS time (round)
         // @Field: GyrX: Gyro X
         // @Field: GyrY: Gyro Y
         // @Field: GyrZ: Gyro z
@@ -498,7 +498,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: AccY: Accelerometer Y
         // @Field: AccZ: Accelerometer Z
 
-        AP::logger().WriteStreaming("ILB1", "TimeUS,GMS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ",
+        AP::logger().WriteStreaming("ILB1", "TimeUS,IMS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ",
                                     "s-kkkooo",
                                     "F-------",
                                     "QIffffff",
@@ -537,6 +537,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB4
         // @Description: InertialLabs AHRS data4
         // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
         // @Field: GMS: GNSS Position timestamp
         // @Field: GWk: GPS Week
         // @Filed: NSat: Number of satellites
@@ -548,11 +549,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: Spd: GNSS Horizontal speed
         // @Field: VZ: GNSS Vertical speed
 
-        AP::logger().WriteStreaming("ILB4", "TimeUS,GMS,GWk,NSat,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ",
-                                    "s----DUmhnn",
-                                    "F----------",
-                                    "QIHBBffffff",
-                                    now_us, gnss_data.pos_timestamp, nav_ins_data.gps_week,
+        AP::logger().WriteStreaming("ILB4", "TimeUS,IMS,GMS,GWk,NSat,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ",
+                                    "s-----DUmhnn",
+                                    "F-----------",
+                                    "QIIHBBffffff",
+                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, nav_ins_data.gps_week,
                                     nav_ins_data.satellites_in_view, gnss_data.new_data,
                                     gnss_data.lat*1.0e-7, gnss_data.lng*1.0e-7, gnss_data.alt*0.01,
                                     gnss_data.track_over_ground, gnss_data.hor_speed, gnss_data.ver_speed
@@ -561,6 +562,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB5
         // @Description: InertialLabs AHRS data5
         // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
         // @Field: GMS: GNSS Position timestamp
         // @Field: FType: fix type
         // @Field: GSS: GNSS spoofing status
@@ -569,11 +571,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: GI2: GNSS Info2
         // @Field: GAPS: GNSS Angles position type
 
-        AP::logger().WriteStreaming("ILB5", "TimeUS,GMS,FType,GSS,GJS,GI1,GI2,GAPS",
-                                    "s-------",
-                                    "F-------",
-                                    "QIBBBBBB",
-                                    now_us, gnss_data.pos_timestamp, nav_ins_data.fix_type,
+        AP::logger().WriteStreaming("ILB5", "TimeUS,IMS,GMS,FType,GSS,GJS,GI1,GI2,GAPS",
+                                    "s--------",
+                                    "F--------",
+                                    "QIIBBBBBB",
+                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, nav_ins_data.fix_type,
                                     gnss_data.spoof_status, gnss_data.jam_status,
                                     gnss_data.info_short.info1, gnss_data.info_short.info2,
                                     gnss_data.angle_pos_type);
@@ -581,6 +583,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB6
         // @Description: InertialLabs AHRS data6
         // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
         // @Field: GMS: GNSS Position timestamp
         // @Field: GpsHTS: GNSS Heading timestamp
         // @Field: GpsYaw: GNSS Heading
@@ -591,11 +594,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VDOP: GNSS VDOP
         // @Field: TDOP: GNSS TDOP
 
-        AP::logger().WriteStreaming("ILB6", "TimeUS,GMS,GpsHTS,GpsYaw,GpsPitch,GDOP,PDOP,HDOP,VDOP,TDOP",
-                                    "s--hd-----",
-                                    "F---------",
-                                    "QIIfffffff",
-                                    now_us, gnss_data.pos_timestamp, gnss_data.heading_timestamp,
+        AP::logger().WriteStreaming("ILB6", "TimeUS,IMS,GMS,GpsHTS,GpsYaw,GpsPitch,GDOP,PDOP,HDOP,VDOP,TDOP",
+                                    "s---hd-----",
+                                    "F----------",
+                                    "QIIIfffffff",
+                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, gnss_data.heading_timestamp,
                                     gnss_data.heading, gnss_data.pitch, gnss_data.gdop, gnss_data.pdop,
                                     nav_ins_data.hdop, nav_ins_data.vdop, gnss_data.tdop);
 
@@ -610,7 +613,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB3
         // @Description: InertialLabs AHRS data3
         // @Field: TimeUS: Time since system startup
-        // @Field: GMS: GPS INS time (round)
+        // @Field: IMS: GPS INS time (round)
         // @Field: Press: Static pressure
         // @Field: Diff: Differential pressure
         // @Field: Temp: Temperature
@@ -621,7 +624,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VWD: Wind velocity down
         // @Field: ADU: Air Data Unit status
 
-        AP::logger().WriteStreaming("ILB3", "TimeUS,GMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,VWD,ADU",
+        AP::logger().WriteStreaming("ILB3", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,VWD,ADU",
                                     "s-PPOmnnnn-",
                                     "F----------",
                                     "QIffffffffH",
@@ -640,12 +643,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB2
         // @Description: InertialLabs AHRS data2
         // @Field: TimeUS: Time since system startup
-        // @Field: GMS: GPS INS time (round)
+        // @Field: IMS: GPS INS time (round)
         // @Field: MagX: Magnetometer X
         // @Field: MagY: Magnetometer Y
         // @Field: MagZ: Magnetometer Z
 
-        AP::logger().WriteStreaming("ILB2", "TimeUS,GMS,MagX,MagY,MagZ",
+        AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,MagX,MagY,MagZ",
                                     "s----",
                                     "F----",
                                     "QIfff",
@@ -684,7 +687,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB7
         // @Description: InertialLabs AHRS data7
         // @Field: TimeUS: Time since system startup
-        // @Field: GMS: GPS INS time (round)
+        // @Field: IMS: GPS INS time (round)
         // @Field: Roll: euler roll
         // @Field: Pitch: euler pitch
         // @Field: Yaw: euler yaw
@@ -698,7 +701,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: USW2: USW2
         // @Field: Vdc: Supply voltage
 
-        AP::logger().WriteStreaming("ILB7", "TimeUS,GMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc",
+        AP::logger().WriteStreaming("ILB7", "TimeUS,IMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc",
                                     "s-dddnnnDUm--v",
                                     "F-------------",
                                     "QIfffffffffHHf",
@@ -712,7 +715,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @LoggerMessage: ILB8
         // @Description: InertialLabs AHRS data8
         // @Field: TimeUS: Time since system startup
-        // @Field: GMS: GPS INS time (round)
+        // @Field: IMS: GPS INS time (round)
         // @Field: PVN: position variance north
         // @Field: PVE: position variance east
         // @Field: PVD: position variance down
@@ -720,7 +723,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VVE: velocity variance east
         // @Field: VVD: velocity variance down
 
-        AP::logger().WriteStreaming("ILB8", "TimeUS,GMS,PVN,PVE,PVD,VVN,VVE,VVD",
+        AP::logger().WriteStreaming("ILB8", "TimeUS,IMS,PVN,PVE,PVD,VVN,VVE,VVD",
                                     "s-mmmnnn",
                                     "F-------",
                                     "QIffffff",
