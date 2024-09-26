@@ -201,7 +201,7 @@ public:
         uint8_t ins_sol_status;
     };
 
-    AP_ExternalAHRS::gps_data_message_t nav_ins_data;
+    AP_ExternalAHRS::gps_data_message_t gps_data;
     AP_ExternalAHRS::mag_data_message_t mag_data;
     AP_ExternalAHRS::baro_data_message_t baro_data;
     AP_ExternalAHRS::ins_data_message_t ins_data;

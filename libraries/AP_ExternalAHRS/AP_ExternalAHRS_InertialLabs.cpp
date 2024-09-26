@@ -261,12 +261,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         switch (mtype) {
             case MessageType::GPS_INS_TIME_MS: {
                 CHECK_SIZE(u.gnss_time_ms);
-                nav_ins_data.ms_tow = u.gnss_time_ms;
+                gps_data.ms_tow = u.gnss_time_ms;
                 break;
             }
             case MessageType::GPS_WEEK: {
                 CHECK_SIZE(u.gnss_week);
-                nav_ins_data.gps_week = u.gnss_week;
+                gps_data.gps_week = u.gnss_week;
                 break;
             }
             case MessageType::ACCEL_DATA_HR: {
@@ -306,9 +306,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             case MessageType::VELOCITIES: {
                 CHECK_SIZE(u.velocity);
                 state.velocity = u.velocity.tofloat().rfu_to_frd()*0.01;
-                nav_ins_data.ned_vel_north = state.velocity.x; // m/s
-                nav_ins_data.ned_vel_east = state.velocity.y; // m/s
-                nav_ins_data.ned_vel_down = state.velocity.z; // m/s
+                gps_data.ned_vel_north = state.velocity.x; // m/s
+                gps_data.ned_vel_east = state.velocity.y; // m/s
+                gps_data.ned_vel_down = state.velocity.z; // m/s
                 state.have_velocity = true;
                 last_vel_ms = now_ms;
                 break;
@@ -319,9 +319,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 state.location.lng = u.position.lon; // deg*1.0e7
                 state.location.alt = u.position.alt; // m*100
 
-                nav_ins_data.latitude = u.position.lat; // deg*1.0e7
-                nav_ins_data.longitude = u.position.lon; // deg*1.0e7
-                nav_ins_data.msl_altitude = u.position.alt; // m*100
+                gps_data.latitude = u.position.lat; // deg*1.0e7
+                gps_data.longitude = u.position.lon; // deg*1.0e7
+                gps_data.msl_altitude = u.position.alt; // m*100
 
                 state.have_location = true;
                 state.last_location_update_us = AP_HAL::micros();
@@ -345,13 +345,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::GNSS_EXTENDED_INFO: {
                 CHECK_SIZE(u.gnss_extended_info);
-                nav_ins_data.fix_type = u.gnss_extended_info.fix_type+1;
+                gps_data.fix_type = u.gnss_extended_info.fix_type+1;
                 gnss_data.spoof_status = u.gnss_extended_info.spoofing_status;
                 break;
             }
             case MessageType::NUM_SATS: {
                 CHECK_SIZE(u.num_sats);
-                nav_ins_data.satellites_in_view = u.num_sats;
+                gps_data.satellites_in_view = u.num_sats;
                 break;
             }
             case MessageType::GNSS_POSITION: {
@@ -448,8 +448,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 gnss_data.pdop = u.gnss_dop.pdop*0.1;
                 gnss_data.tdop = u.gnss_dop.tdop*0.1;
 
-                nav_ins_data.hdop = u.gnss_dop.hdop*0.1;
-                nav_ins_data.vdop = u.gnss_dop.vdop*0.1;
+                gps_data.hdop = u.gnss_dop.hdop*0.1;
+                gps_data.vdop = u.gnss_dop.vdop*0.1;
                 break;
             }
             case MessageType::INS_SOLUTION_STATUS: {
@@ -502,7 +502,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s-kkkooo",
                                     "F-------",
                                     "QIffffff",
-                                    now_us, nav_ins_data.ms_tow,
+                                    now_us, gps_data.ms_tow,
                                     ins_data.gyro.x, ins_data.gyro.y, ins_data.gyro.z,
                                     ins_data.accel.x, ins_data.accel.y, ins_data.accel.z);
     }
@@ -515,16 +515,16 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         gnss_data.new_data !=0) {
         uint8_t instance;
         if (AP::gps().get_first_external_instance(instance)) {
-            AP::gps().handle_external(nav_ins_data, instance);
+            AP::gps().handle_external(gps_data, instance);
         }
-        if (nav_ins_data.satellites_in_view > 3) {
+        if (gps_data.satellites_in_view > 3) {
             if (last_gps_ms == 0) {
                 GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: got GPS lock");
                 if (!state.have_origin) {
                     state.origin = Location{
-                        nav_ins_data.latitude,
-                        nav_ins_data.longitude,
-                        nav_ins_data.msl_altitude,
+                        gps_data.latitude,
+                        gps_data.longitude,
+                        gps_data.msl_altitude,
                         Location::AltFrame::ABSOLUTE};
                     state.have_origin = true;
                 }
@@ -553,8 +553,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s-----DUmhnn",
                                     "F-----------",
                                     "QIIHBBffffff",
-                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, nav_ins_data.gps_week,
-                                    nav_ins_data.satellites_in_view, gnss_data.new_data,
+                                    now_us, gps_data.ms_tow, gnss_data.pos_timestamp, gps_data.gps_week,
+                                    gps_data.satellites_in_view, gnss_data.new_data,
                                     gnss_data.lat*1.0e-7, gnss_data.lng*1.0e-7, gnss_data.alt*0.01,
                                     gnss_data.track_over_ground, gnss_data.hor_speed, gnss_data.ver_speed
                                     );
@@ -575,7 +575,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s--------",
                                     "F--------",
                                     "QIIBBBBBB",
-                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, nav_ins_data.fix_type,
+                                    now_us, gps_data.ms_tow, gnss_data.pos_timestamp, gps_data.fix_type,
                                     gnss_data.spoof_status, gnss_data.jam_status,
                                     gnss_data.info_short.info1, gnss_data.info_short.info2,
                                     gnss_data.angle_pos_type);
@@ -598,9 +598,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s---hd-----",
                                     "F----------",
                                     "QIIIfffffff",
-                                    now_us, nav_ins_data.ms_tow, gnss_data.pos_timestamp, gnss_data.heading_timestamp,
+                                    now_us, gps_data.ms_tow, gnss_data.pos_timestamp, gnss_data.heading_timestamp,
                                     gnss_data.heading, gnss_data.pitch, gnss_data.gdop, gnss_data.pdop,
-                                    nav_ins_data.hdop, nav_ins_data.vdop, gnss_data.tdop);
+                                    gps_data.hdop, gps_data.vdop, gnss_data.tdop);
 
     }
 
@@ -628,7 +628,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s-PPOmnnnn-",
                                     "F----------",
                                     "QIffffffffH",
-                                    now_us, nav_ins_data.ms_tow,
+                                    now_us, gps_data.ms_tow,
                                     baro_data.pressure_pa, airspeed_data.differential_pressure, baro_data.temperature,
                                     state2.baro_alt, state2.true_airspeed,
                                     state2.wind_speed.x, state2.wind_speed.y, state2.wind_speed.z,
@@ -652,7 +652,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s----",
                                     "F----",
                                     "QIfff",
-                                    now_us, nav_ins_data.ms_tow,
+                                    now_us, gps_data.ms_tow,
                                     mag_data.field.x, mag_data.field.y, mag_data.field.z);
 
     }
@@ -705,7 +705,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s-dddnnnDUm--v",
                                     "F-------------",
                                     "QIfffffffffHHf",
-                                    now_us, nav_ins_data.ms_tow,
+                                    now_us, gps_data.ms_tow,
                                     degrees(roll), degrees(pitch), yaw_deg,
                                     state.velocity.x, state.velocity.y, state.velocity.z,
                                     state.location.lat*1.0e-7, state.location.lng*1.0e-7, state.location.alt*0.01,
@@ -727,7 +727,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "s-mmmnnn",
                                     "F-------",
                                     "QIffffff",
-                                    now_us, nav_ins_data.ms_tow,
+                                    now_us, gps_data.ms_tow,
                                     state2.kf_pos_covariance.x, state2.kf_pos_covariance.y, state2.kf_pos_covariance.z,
                                     state2.kf_vel_covariance.x, state2.kf_vel_covariance.y, state2.kf_vel_covariance.z);
     }
@@ -1184,7 +1184,7 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     const mavlink_eahrs_status_info_t package{last_unit_status,
                                               last_unit_status2,
                                               last_air_data_status,
-                                              (uint16_t)(nav_ins_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
+                                              (uint16_t)(gps_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
                                               gnss_data.spoof_status};
     mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
 }
