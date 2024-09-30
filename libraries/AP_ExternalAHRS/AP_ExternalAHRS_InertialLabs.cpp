@@ -358,7 +358,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 CHECK_SIZE(u.gnss_position);
                 gnss_data.lat = u.gnss_position.gnss_lat; // deg*1.0e7
                 gnss_data.lng = u.gnss_position.gnss_lon; // deg*1.0e7
-                gnss_data.alt = u.gnss_position.gnss_alt; // mm
+                gnss_data.alt = u.gnss_position.gnss_alt; // m*100
+
+                gps_data.latitude_raw = gnss_data.lat; // deg*1.0e7
+                gps_data.longitude_raw = gnss_data.lng; // deg*1.0e7
+                gps_data.altitude_raw = gnss_data.alt; // m*100
                 break;
             }
             case MessageType::GNSS_VEL_TRACK: {
@@ -366,6 +370,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 gnss_data.hor_speed = u.gnss_vel_track.hor_speed*0.01; // m/s
                 gnss_data.ver_speed = u.gnss_vel_track.ver_speed*0.01; // m/s
                 gnss_data.track_over_ground = u.gnss_vel_track.track_over_ground*0.01; // deg
+
+                gps_data.track_over_ground_raw = u.gnss_vel_track.track_over_ground; // deg*100
                 break;
             }
             case MessageType::GNSS_POS_TIMESTAMP: {

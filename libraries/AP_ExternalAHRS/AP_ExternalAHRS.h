@@ -155,6 +155,11 @@ public:
         float vdop;
         int32_t  longitude;
         int32_t  latitude;
+        int32_t  longitude_raw;
+        int32_t  latitude_raw;
+        int32_t  altitude_raw;
+        int32_t  track_over_ground_raw;
+        uint8_t gps_raw_status;
         int32_t  msl_altitude;       // cm
         float  ned_vel_north;
         float  ned_vel_east;
