@@ -400,7 +400,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::WIND_SPEED: {
                 CHECK_SIZE(u.wind_speed);
+                state2.airspeed_sf = u.wind_speed.tofloat().z*1.0e-3;
                 state2.wind_speed = u.wind_speed.tofloat().rfu_to_frd()*0.01; // m/s
+                state2.wind_speed.z = 0;
                 break;
             }
             case MessageType::AIR_DATA_STATUS: {
@@ -621,17 +623,17 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: TAS: true airspeed
         // @Field: VWN: Wind velocity north
         // @Field: VWE: Wind velocity east
-        // @Field: VWD: Wind velocity down
+        // @Field: ArspSF: The scale factor (SF) for measured air speed
         // @Field: ADU: Air Data Unit status
 
-        AP::logger().WriteStreaming("ILB3", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,VWD,ADU",
+        AP::logger().WriteStreaming("ILB3", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,ArspSF,ADU",
                                     "s-PPOmnnnn-",
                                     "F----------",
                                     "QIffffffffH",
                                     now_us, nav_ins_data.ms_tow,
                                     baro_data.pressure_pa, airspeed_data.differential_pressure, baro_data.temperature,
                                     state2.baro_alt, state2.true_airspeed,
-                                    state2.wind_speed.x, state2.wind_speed.y, state2.wind_speed.z,
+                                    state2.wind_speed.x, state2.wind_speed.y, state2.airspeed_sf,
                                     state2.air_data_status);
     }
 
