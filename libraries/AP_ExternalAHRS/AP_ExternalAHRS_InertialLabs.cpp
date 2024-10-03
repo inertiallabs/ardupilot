@@ -378,6 +378,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 gnss_data.info_short = u.gnss_info_short;
                 break;
             }
+            case MessageType::GNSS_SOLUTION_STATUS: {
+                CHECK_SIZE(u.gnss_solution_status);
+                gnss_data.gnss_solution_status = u.gnss_solution_status;
+                break;
+            }
             case MessageType::GNSS_NEW_DATA: {
                 CHECK_SIZE(u.gnss_new_data);
                 gnss_data.new_data = u.gnss_new_data;

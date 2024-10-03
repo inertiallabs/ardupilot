@@ -73,6 +73,7 @@ public:
         GNSS_VEL_TRACK = 0x32,
         GNSS_POS_TIMESTAMP = 0x3E,
         GNSS_INFO_SHORT = 0x36,
+        GNSS_SOLUTION_STATUS = 0x38,
         GNSS_NEW_DATA = 0x41,
         GNSS_JAM_STATUS = 0xC0,
         DIFFERENTIAL_PRESSURE = 0x28,
@@ -176,6 +177,7 @@ public:
         } gnss_vel_track;
         uint32_t gnss_pos_timestamp; // ms
         gnss_info_short_t gnss_info_short;
+        uint8_t gnss_solution_status;
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
         int32_t differential_pressure; // mbar*1e4
@@ -259,6 +261,7 @@ private:
         uint8_t jam_status;
         uint8_t angle_pos_type;
         gnss_info_short_t info_short;
+        uint8_t gnss_solution_status;
         float heading;
         float pitch;
         float gdop;
