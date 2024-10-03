@@ -88,6 +88,7 @@ public:
         GNSS_HEADING_TIMESTAMP = 0x40,
         GNSS_DOP = 0x42,
         INS_SOLUTION_STATUS = 0x54,
+        INS_POSITION_AND_VELOCITY_ACCURACY = 0x5f,
     };
 
     /*
@@ -201,6 +202,14 @@ public:
             uint16_t tdop;
         } gnss_dop; // 10e3
         uint8_t ins_sol_status;
+        struct PACKED {
+            int32_t lat; // m*1000
+            int32_t lng; // m*1000
+            int32_t alt; // m*1000
+            int32_t east_vel; // m/s*1000
+            int32_t north_vel; // m/s*1000
+            int32_t ver_vel; // m/s*1000
+        } ins_accuracy;
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -245,6 +254,12 @@ private:
         uint16_t air_data_status;
         float supply_voltage;
         uint8_t ins_sol_status;
+        uint32_t ins_lat_accuracy;
+        uint32_t ins_lng_accuracy;
+        uint32_t ins_alt_accuracy;
+        uint32_t ins_east_vel_accuracy;
+        uint32_t ins_north_vel_accuracy;
+        uint32_t ins_ver_vel_accuracy;
     } state2;
 
     struct {

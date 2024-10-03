@@ -164,6 +164,9 @@ public:
         float  ned_vel_north;
         float  ned_vel_east;
         float  ned_vel_down;
+        uint32_t ins_lat_accuracy;
+        uint32_t ins_lng_accuracy;
+        uint32_t ins_alt_accuracy;
     } gps_data_message_t;
 
     typedef struct {

@@ -468,6 +468,20 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 state2.ins_sol_status = u.ins_sol_status;
                 break;
             }
+            case MessageType::INS_POSITION_AND_VELOCITY_ACCURACY: {
+                CHECK_SIZE(u.ins_accuracy);
+                state2.ins_lat_accuracy = static_cast<uint32_t>(u.ins_accuracy.lat); // m*1000
+                state2.ins_lng_accuracy = static_cast<uint32_t>(u.ins_accuracy.lng); // m*1000
+                state2.ins_alt_accuracy = static_cast<uint32_t>(u.ins_accuracy.alt); // m*1000
+                state2.ins_east_vel_accuracy = static_cast<uint32_t>(u.ins_accuracy.east_vel); // m/s*1000
+                state2.ins_north_vel_accuracy = static_cast<uint32_t>(u.ins_accuracy.north_vel); // m/s*1000
+                state2.ins_ver_vel_accuracy = static_cast<uint32_t>(u.ins_accuracy.ver_vel); // m/s*1000
+
+                gps_data.ins_lat_accuracy = state2.ins_lat_accuracy;
+                gps_data.ins_lng_accuracy = state2.ins_lng_accuracy;
+                gps_data.ins_alt_accuracy = state2.ins_alt_accuracy;
+                break;
+            }
         }
 
         if (msg_len == 0) {
