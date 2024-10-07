@@ -80,6 +80,7 @@ extern const AP_HAL::HAL &hal;
 #define ILABS_AIRDATA_AIRSPEED_FAIL               0x0200
 #define ILABS_AIRDATA_BELOW_THRESHOLD             0x0400
 
+static const uint16_t aiding_data_rate = 50; // Maximum Aiding data rate in Hz
 
 // constructor
 AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_frontend,
@@ -244,7 +245,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     uint32_t now_ms = AP_HAL::millis();
 
     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_trans_diff_pressure)) { //AVK 15.05.2024
-        make_tx_packet(tx_buffer);
+        uint16_t points_to_decimate = get_num_points_to_dec(aiding_data_rate);
+        if (counter >= points_to_decimate) {
+            make_tx_packet(tx_buffer);
+            counter = 0;
+        }
+        counter++;
     }
 
     for (uint8_t i=0; i<num_messages; i++) {
@@ -1202,6 +1208,24 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
                                               (uint16_t)(nav_ins_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
                                               gnss_data.spoof_status};
     mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
+}
+
+uint16_t AP_ExternalAHRS_InertialLabs::get_num_points_to_dec(const uint16_t rate) const
+{
+    uint16_t data_rate = get_rate();
+    if (rate == 0 || data_rate == 0) {
+        return 0;
+    }
+
+    uint16_t a = data_rate;
+    uint16_t b = rate;
+    while (b != 0) {
+        uint16_t temp = b;
+        b = a % b;
+        a = temp;
+    }
+
+    return data_rate / a;
 }
 
 void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const
