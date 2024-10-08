@@ -56,12 +56,12 @@ private:
         uint8_t msg_id = 0x95;
         uint16_t msg_len; // total packet length-2
 
-        // send Table4, 32 messages
-        uint8_t num_messages = 32;
-        uint8_t messages[32] = {
+        // send Table4, 34 messages
+        uint8_t num_messages = 34;
+        uint8_t messages[34] = {
             0x01, 0x3C, 0x23, 0x21, 0x25, 0x24, 0x07, 0x12, 0x10, 0x58, 0x57, 0x53, 0x4a,
-            0x3b, 0x30, 0x32, 0x3e, 0x36, 0x41, 0xc0, 0x28, 0x86, 0x8a, 0x8d, 0x50,
-            0x52, 0x5a, 0x33, 0x3a, 0x40, 0x42, 0x54
+            0x3b, 0x30, 0x32, 0x3e, 0x36, 0x38, 0x41, 0xc0, 0x28, 0x86, 0x8a, 0x8d, 0x50,
+            0x52, 0x5a, 0x33, 0x3a, 0x40, 0x42, 0x54, 0x5f
         };
         uint32_t gnss_ins_time_ms; // ms since start of GPS week for IMU data
         uint16_t gnss_week;
@@ -100,6 +100,7 @@ private:
         } gnss_vel_track;
         uint32_t gnss_pos_timestamp; // ms
         gnss_info_short_t gnss_info_short;
+        uint8_t gnss_solution_status;
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
         int32_t differential_pressure; // mbar*1e4
@@ -123,6 +124,14 @@ private:
             uint16_t tdop;
         } gnss_dop; // 10e3
         uint8_t ins_sol_status;
+        struct PACKED {
+            int32_t lat; // m*1000
+            int32_t lng; // m*1000
+            int32_t alt; // m*1000
+            int32_t east_vel; // m/s*1000
+            int32_t north_vel; // m/s*1000
+            int32_t ver_vel; // m/s*1000
+        } ins_accuracy;
         uint16_t crc;
     } pkt;
 

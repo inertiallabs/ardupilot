@@ -124,6 +124,9 @@ void InertialLabs::send_packet(void)
     // 0x54 INS (Navigation) solution status
     pkt.ins_sol_status = 0; // INS solution is good
 
+    // 0x38 GNSS solution status
+    pkt.gnss_solution_status = 0; // GNSS solution is good
+
     pkt.gnss_new_data = 0;
     if (packets_sent % gps_frequency == 0) {
         // 0x3C GPS week
@@ -177,6 +180,14 @@ void InertialLabs::send_packet(void)
         pkt.gnss_dop.vdop = 1000; // *1.0e3
         pkt.gnss_dop.tdop = 1000; // *1.0e3
     }
+
+    // 0x5f INS position and velocity accuracy
+    pkt.ins_accuracy.lat = 1000; // m*1000
+    pkt.ins_accuracy.lng = 1000; // m*1000
+    pkt.ins_accuracy.alt = 1000; // m*1000
+    pkt.ins_accuracy.east_vel = 1000; // m/s*1000
+    pkt.ins_accuracy.north_vel = 1000; // m/s*1000
+    pkt.ins_accuracy.ver_vel = 1000; // m/s*1000
 
     pkt.differential_pressure = 0.5*sq(fdm.airspeed+fabsF(rand_float()*0.25))*1.0e4;
     pkt.supply_voltage = 12.3*100;
