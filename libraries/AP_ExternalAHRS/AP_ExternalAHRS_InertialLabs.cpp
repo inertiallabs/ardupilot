@@ -573,16 +573,17 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: GCrs: GNSS Track over ground
         // @Field: Spd: GNSS Horizontal speed
         // @Field: VZ: GNSS Vertical speed
+        // @Field: St: GNSS solution status
 
-        AP::logger().WriteStreaming("ILB4", "TimeUS,IMS,GMS,GWk,NSat,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ",
-                                    "s-----DUmhnn",
-                                    "F-----------",
-                                    "QIIHBBffffff",
+        AP::logger().WriteStreaming("ILB4", "TimeUS,IMS,GMS,GWk,NSat,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ,St",
+                                    "s-----DUmhnn-",
+                                    "F------------",
+                                    "QIIHBBffffffB",
                                     now_us, gps_data.ms_tow, gnss_data.pos_timestamp, gps_data.gps_week,
                                     gps_data.satellites_in_view, gnss_data.new_data,
                                     gnss_data.lat*1.0e-7, gnss_data.lng*1.0e-7, gnss_data.alt*0.01,
-                                    gnss_data.track_over_ground, gnss_data.hor_speed, gnss_data.ver_speed
-                                    );
+                                    gnss_data.track_over_ground, gnss_data.hor_speed, gnss_data.ver_speed,
+                                    gnss_data.gnss_solution_status);
 
         // @LoggerMessage: ILB5
         // @Description: InertialLabs AHRS data5
@@ -755,6 +756,22 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     now_us, gps_data.ms_tow,
                                     state2.kf_pos_covariance.x, state2.kf_pos_covariance.y, state2.kf_pos_covariance.z,
                                     state2.kf_vel_covariance.x, state2.kf_vel_covariance.y, state2.kf_vel_covariance.z);
+
+        // @LoggerMessage: ILB9
+        // @Description: InertialLabs AHRS data9
+        // @Field: LatAc: INS latitude accuracy
+        // @Field: LngAc: INS longitude accuracy
+        // @Field: AltAc: INS altitude MSL accuracy
+        // @Field: VNAc: INS velocity north accuracy
+        // @Field: VEAc: INS velocity east accuracy
+        // @Field: VAAc: INS velocity alt accuracy
+
+        AP::logger().WriteStreaming("ILB9", "LatAc,LngAc,AltAc,VNAc,VEAc,VAAc",
+                                    "mmmnnn",
+                                    "------",
+                                    "ffffff",
+                                    state2.ins_lat_accuracy*1.0e-3, state2.ins_lng_accuracy*1.0e-3, state2.ins_alt_accuracy*1.0e-3,
+                                    state2.ins_north_vel_accuracy*1.0e-3, state2.ins_east_vel_accuracy*1.0e-3, state2.ins_ver_vel_accuracy*1.0e-3);
     }
 
     const uint32_t dt_critical_usw = 10000;
