@@ -23,6 +23,7 @@
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
 #include "AP_ExternalAHRS_backend.h"
+#include "AP_ExternalAHRS_InertialLabs_message_list.h"
 
 class AP_ExternalAHRS_InertialLabs : public AP_ExternalAHRS_backend {
 
@@ -227,6 +228,7 @@ private:
     bool check_header(const ILabsHeader *h) const;
     void make_tx_packet(uint8_t *packet) const; //AVK 15.05.2024
     uint16_t get_num_points_to_dec(const uint16_t rate) const; // get number of points to downsampling
+    void send_EAHRS_status_report(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg); // send INS status to GCS via MAVLink
 
     // re-sync on header bytes
     void re_sync(void);
@@ -274,13 +276,15 @@ private:
         float tdop;
     } gnss_data;
 
-    uint16_t last_unit_status;
-    uint16_t last_unit_status2;
-    uint16_t last_air_data_status;
-    uint8_t last_spoof_status;
-    uint8_t last_jam_status;
-
-    uint32_t last_critical_msg_ms;
+   struct {
+        uint16_t unit_status;
+        uint16_t unit_status2;
+        uint16_t air_data_status;
+        uint8_t spoof_status;
+        uint8_t jam_status;
+        uint8_t ins_sol_status;
+        uint8_t mag_clb_status;
+    } last_ins_status;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
