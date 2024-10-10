@@ -46,7 +46,6 @@ public:
     virtual void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) {};
     virtual bool get_wind_estimation(Vector3f &wind) {return false;};                //AVK 10.05.2024
     virtual bool get_true_airspeed(float &airspeed) {return false;};                 //AVK 11.05.2024
-    virtual bool get_true_baro_alt(float &baro_alt) {return false;};                 //AVK 11.05.2024
 
     // Check for new data.
     // This is used when there's not a separate thread for EAHRS.

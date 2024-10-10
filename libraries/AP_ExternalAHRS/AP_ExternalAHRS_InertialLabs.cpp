@@ -254,7 +254,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 CHECK_SIZE(u.baro_data);
                 baro_data.pressure_pa = u.baro_data.pressure_pa2*2; // Pa
                 state2.baro_alt = u.baro_data.baro_alt*0.01; // m
-                baro_data.baro_altitude = state2.baro_alt; // m AVK 07.05.2024
                 break;
             }
             case MessageType::MAG_DATA: {
@@ -905,16 +904,6 @@ bool AP_ExternalAHRS_InertialLabs::get_true_airspeed(float &airspeed) //AVK 11.0
 {
     if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
         airspeed =  state2.true_airspeed;
-        return true;
-    }
-
-    return false;
-}
-
-bool AP_ExternalAHRS_InertialLabs::get_true_baro_alt(float &baro_alt) //AVK 11.05.2024
-{
-    if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_BARO_ALT)) {
-        baro_alt =  state2.baro_alt;
         return true;
     }
 

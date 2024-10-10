@@ -124,7 +124,6 @@ public:
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     bool get_estimate_wind(Vector3f &wind) const;       //AVK 11.05.2024
     bool get_airspeed(float &tas) const;                //AVK 11.05.2024
-    bool get_baro_alt(float &tbalt) const;              //AVK 11.05.2024
 
     // update backend
     void update();
@@ -136,7 +135,6 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
-        float baro_altitude; //AVK 07.05.2024
     } baro_data_message_t;
 
     typedef struct {
@@ -179,8 +177,8 @@ public:
 
     enum class OPTIONS {
         VN_UNCOMP_IMU = (1U << 0),
-        ILAB_DISABLE_CLB = (1U << 1), // Disable InertialLabs INS compass, accelerometer and gyro calibration
-        ILAB_USE_BARO_ALT = (1U << 2), // Use InertialLabs INS baro altitude and vertical velocity instead of calculated by Ardupilot
+        RESERVED1 = (1U << 1), // Reserved for Inertial Labs options
+        RESERVED2 = (1U << 2), // Reserved for Inertial Labs options
         ILAB_USE_AIRSPEED = (1U << 3), // Use InertialLabs INS airspeed and wind estimation instead of calculated by Ardupilot
         ILAB_trans_diff_pressure = (1U << 4), //AVK 15.05.2024 Enable send diff_pressure to ILab
         ILAB_trans_GPS_INPUT = (1U << 5), // Enable transmission of GPS_INPUT [232] MAVLink message to IL INS

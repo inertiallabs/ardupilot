@@ -71,7 +71,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Disable calibration and pre-arm checks of IL INS,2:Use IL INS baro altitude,3:Use IL INS airspeed and wind estimation,4:Transmit static and diff pressure to IL INS,5:Transmit GPS_INPUT MAVLink message to IL INS,6:Disable AHRS rotation to an AHRS_TRIM_ angles
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Reserved,2:Reserved,3:Use IL INS airspeed and wind estimation,4:Transmit static and diff pressure to IL INS,5:Transmit GPS_INPUT MAVLink message to IL INS,6:Disable AHRS rotation to an AHRS_TRIM_ angles
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 
@@ -310,13 +310,6 @@ bool AP_ExternalAHRS::get_airspeed(float &tas) const            //AVK 11.05.2024
 {
     if (backend) {
         return backend->get_true_airspeed(tas);
-    }
-    return false;
-}
-bool AP_ExternalAHRS::get_baro_alt(float &tbalt) const          //AVK 11.05.2024
-{
-    if (backend) {
-        return backend->get_true_baro_alt(tbalt);
     }
     return false;
 }
