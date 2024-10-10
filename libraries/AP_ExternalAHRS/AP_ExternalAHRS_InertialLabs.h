@@ -222,6 +222,7 @@ private:
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
     void make_tx_packet(uint8_t *packet) const; //AVK 15.05.2024
+    uint16_t get_num_points_to_dec(const uint16_t rate) const; // get number of points to downsampling
 
     // re-sync on header bytes
     void re_sync(void);
@@ -279,6 +280,8 @@ private:
     uint32_t last_vel_ms;
     uint32_t last_pos_ms;
     uint32_t last_gps_ms;
+
+    uint16_t counter = 0;
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
