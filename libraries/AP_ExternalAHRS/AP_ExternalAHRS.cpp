@@ -72,7 +72,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag, 1:Transmit airspeed to IL INS
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 
@@ -89,7 +89,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Units: Hz
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
-    
+
     AP_GROUPEND
 };
 
@@ -460,4 +460,3 @@ AP_ExternalAHRS &externalAHRS()
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
-
