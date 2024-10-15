@@ -84,6 +84,7 @@ enum IL_NEWGPS {
 };
 
 enum IL_NewAidingData {
+	NEW_AIRSPEED    = (1U << 1),
 	NEW_WIND        = (1U << 2),
 	NEW_EXT_POS     = (1U << 3),
 	NEW_HEADING     = (1U << 5),
@@ -101,28 +102,28 @@ struct ILStatusMessage {
 };
 
 const ILStatusMessage IL_usw_msg[] = {
-	{ INITIAL_ALIGNMENT_FAIL, MAV_SEVERITY_CRITICAL, "Unsuccessful initial alignment",        ""                                 },
-	{ OPERATION_FAIL,         MAV_SEVERITY_CRITICAL, "IMU data are incorrect",                ""                                 },
-	{ GYRO_FAIL,              MAV_SEVERITY_CRITICAL, "Gyros failure",                         ""                                 },
-	{ ACCEL_FAIL,             MAV_SEVERITY_CRITICAL, "Accelerometers failure",                ""                                 },
-	{ MAG_FAIL,               MAV_SEVERITY_CRITICAL, "Magnetometers failure",                 ""                                 },
-	{ ELECTRONICS_FAIL,       MAV_SEVERITY_CRITICAL, "Electronics failure",                   ""                                 },
-	{ GNSS_FAIL,              MAV_SEVERITY_CRITICAL, "GNSS receiver failure",                 ""                                 },
+	{ INITIAL_ALIGNMENT_FAIL, MAV_SEVERITY_CRITICAL, "Unsuccessful initial alignment",        "Initial alignment is OK"          },
+	{ OPERATION_FAIL,         MAV_SEVERITY_CRITICAL, "IMU data are incorrect",                "IMU data are correct"             },
+	{ GYRO_FAIL,              MAV_SEVERITY_CRITICAL, "Gyros failure",                         "Gyros is OK"                      },
+	{ ACCEL_FAIL,             MAV_SEVERITY_CRITICAL, "Accelerometers failure",                "Accelerometers is OK"             },
+	{ MAG_FAIL,               MAV_SEVERITY_CRITICAL, "Magnetometers failure",                 "Magnetometers is OK"              },
+	{ ELECTRONICS_FAIL,       MAV_SEVERITY_CRITICAL, "Electronics failure",                   "Electronics is OK"                },
+	{ GNSS_FAIL,              MAV_SEVERITY_CRITICAL, "GNSS receiver failure",                 "GNSS receiver is OK"              },
 	{ VOLTAGE_LOW,            MAV_SEVERITY_WARNING,  "Low input voltage",                     "Input voltage is in range"        },
 	{ VOLTAGE_HIGH,           MAV_SEVERITY_WARNING,  "High input voltage",                    "Input voltage is in range"        },
 	{ GYRO_X_RATE_HIGH,       MAV_SEVERITY_WARNING,  "Y-axis angular rate is exceeded",       "Y-axis angular rate is in range"  },
 	{ GYRO_Y_RATE_HIGH,       MAV_SEVERITY_WARNING,  "X-axis angular rate is exceeded",       "X-axis angular rate is in range"  },
 	{ GYRO_Z_RATE_HIGH,       MAV_SEVERITY_WARNING,  "Z-axis angular rate is exceeded",       "Z-axis angular rate is in range"  },
 	{ MAG_FIELD_HIGH,         MAV_SEVERITY_WARNING,  "Large total magnetic field",            "Total magnetic field is in range" },
-	{ TEMP_RANGE_ERR,         MAV_SEVERITY_WARNING,  "Temperature is out of range",           "Temperature is in range"          },
+	{ TEMP_RANGE_ERR,         MAV_SEVERITY_WARNING,  "Temperature is out of range",           "Temperature is in range"          }
 };
 
 const ILStatusMessage IL_usw2_msg[] = {
 	{ ACCEL_X_HIGH,            MAV_SEVERITY_WARNING,  "Y-axis acceleration is out of range",     "Y-axis acceleration is in range"     },
 	{ ACCEL_Y_HIGH,            MAV_SEVERITY_WARNING,  "X-axis acceleration is out of range",     "X-axis acceleration is in range"     },
 	{ ACCEL_Z_HIGH,            MAV_SEVERITY_WARNING,  "Z-axis acceleration is out of range",     "Z-axis acceleration is in range"     },
-	{ ADU_BARO_FAIL,           MAV_SEVERITY_CRITICAL, "Baro altimeter failure",                  ""                                    },
-	{ ADU_DIFF_PRESS_FAIL,     MAV_SEVERITY_CRITICAL, "Diff. pressure sensor failure",           ""                                    },
+	{ ADU_BARO_FAIL,           MAV_SEVERITY_CRITICAL, "Baro altimeter failure",                  "Baro altimeter is OK"                },
+	{ ADU_DIFF_PRESS_FAIL,     MAV_SEVERITY_CRITICAL, "Diff. pressure sensor failure",           "Diff. pressure sensor is OK"         },
 	{ MAG_AUTO_CAL_2D_RUNTIME, MAV_SEVERITY_INFO,     "Automatic 2D calibration is in progress", "Automatic 2D calibration is stopped" },
 	{ MAG_AUTO_CAL_3D_RUNTIME, MAV_SEVERITY_INFO,     "Automatic 3D calibration is in progress", "Automatic 3D calibration is stopped" },
 	{ GNSS_FUSION_OFF,         MAV_SEVERITY_INFO,     "GNSS input switched off",                 "GNSS input switched on"              },
@@ -131,10 +132,8 @@ const ILStatusMessage IL_usw2_msg[] = {
 };
 
 const ILStatusMessage IL_adu_msg[] = {
-	{ BARO_INIT_FAIL,           MAV_SEVERITY_WARNING, "Static pressure sensor unsuccessful initialization", ""                                 },
-	{ DIFF_PRESS_INIT_FAIL,     MAV_SEVERITY_WARNING, "Diff. pressure sensor unsuccessful initialization",  ""                                 },
-	{ BARO_FAIL,                MAV_SEVERITY_WARNING, "Static pressure sensor failure is detect",           ""                                 },
-	{ DIFF_PRESS_FAIL,          MAV_SEVERITY_WARNING, "Diff. pressure sensor failure is detect",            ""                                 },
+	{ BARO_INIT_FAIL,           MAV_SEVERITY_WARNING, "Static pressure sensor unsuccessful initialization", "Static pressure sensor initialization successful"},
+	{ DIFF_PRESS_INIT_FAIL,     MAV_SEVERITY_WARNING, "Diff. pressure sensor unsuccessful initialization",  "Diff. pressure sensor initialization successful"},
 	{ BARO_RANGE_ERR,           MAV_SEVERITY_WARNING, "Static pressure is out of range",                    "Static pressure is in range"      },
 	{ DIFF_PRESS_RANGE_ERR,     MAV_SEVERITY_WARNING, "Diff. pressure is out of range",                     "Diff. pressure is in range"       },
 	{ BARO_ALT_FAIL,            MAV_SEVERITY_WARNING, "Pressure altitude is incorrect",                     "Pressure altitude is correct"     },

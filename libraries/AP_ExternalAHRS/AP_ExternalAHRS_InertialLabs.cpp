@@ -771,9 +771,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     if (last_ins_status.ins_sol_status != state2.ins_sol_status) {
         // IL INS navigation solution status messages
         if ((last_ins_status.ins_sol_status == 4 ||
-                last_ins_status.ins_sol_status == 6 ||
-                last_ins_status.ins_sol_status == 8) &&
-                state2.ins_sol_status == 0) {
+             last_ins_status.ins_sol_status == 6 ||
+             last_ins_status.ins_sol_status == 8) &&
+             state2.ins_sol_status == 0) {
             GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS solution is good");
         }
 
