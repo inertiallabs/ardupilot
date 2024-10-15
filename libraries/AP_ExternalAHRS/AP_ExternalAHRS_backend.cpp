@@ -43,5 +43,9 @@ bool AP_ExternalAHRS_backend::in_fly_forward(void) const
     return AP::ahrs().get_fly_forward();
 }
 
-#endif  // AP_EXTERNAL_AHRS_ENABLED
+uint16_t AP_ExternalAHRS_backend::get_eahrs_log_rate(void) const
+{
+    return frontend.get_log_rate();
+}
 
+#endif  // AP_EXTERNAL_AHRS_ENABLED
