@@ -73,7 +73,20 @@ public:
         SUPPLY_VOLTAGE = 0x50,
         TEMPERATURE = 0x52,
         UNIT_STATUS2 = 0x5A,
+        GNSS_DOP = 0x42,
+        INS_SOLUTION_STATUS = 0x54,
+        INS_POS_VEL_ACCURACY = 0x5F,
         FULL_SAT_INFO = 0x37,
+        GNSS_VEL_LATENCY = 0x3D,
+        GNSS_SOL_STATUS = 0x38,
+        NEW_AIDING_DATA = 0x65,
+        NEW_AIDING_DATA2 = 0xA1,
+        EXT_SPEED = 0x61,
+        EXT_HOR_POS = 0x6E,
+        EXT_ALT = 0x6C,
+        EXT_HEADING = 0x66,
+        EXT_AMBIENT_DATA = 0x6B,
+        EXT_WIND_DATA = 0x62,
     };
 
     /*
@@ -96,6 +109,7 @@ public:
             return Vector3f(x,y,z);
         }
     };
+
     struct PACKED vec3_32_t {
         int32_t x,y,z;
         Vector3f tofloat(void) {
@@ -103,7 +117,7 @@ public:
         }
     };
 
-    struct gnss_extended_info_t {
+    struct PACKED gnss_extended_info_t {
         uint8_t fix_type;
         uint8_t spoofing_status;
     };
@@ -117,6 +131,55 @@ public:
         uint8_t signal_used2;
         uint8_t GPS_time_status;
         uint8_t ext_sol_status;
+    };
+
+    struct PACKED gnss_dop_t {
+        uint16_t gdop;
+        uint16_t pdop;
+        uint16_t hdop;
+        uint16_t vdop;
+        uint16_t tdop;
+    };
+
+    struct PACKED ins_accuracy_t {
+        int32_t lat;
+        int32_t lon;
+        int32_t alt;
+        int32_t east_vel;
+        int32_t north_vel;
+        int32_t ver_vel;
+    };
+
+    struct PACKED ext_hor_pos_t {
+        int32_t lat; // deg*1.0e7
+        int32_t lon; // deg*1.0e7
+        uint16_t lat_std; // m*100
+        uint16_t lon_std; // m*100
+        uint16_t pos_latency; // sec*1000
+    };
+
+    struct PACKED ext_alt_t {
+        int32_t alt; // m*1000
+        uint16_t alt_std; // m*100
+    };
+
+    struct PACKED ext_heading_t {
+        uint16_t heading; // deg*100
+        uint16_t std; // deg*100
+        uint16_t latency; // sec*1000
+    };
+
+    struct PACKED ext_ambient_data_t {
+        int16_t air_temp; // degC*10
+        int32_t alt; // m*100
+        uint16_t abs_press; // Pa/2
+    };
+
+    struct PACKED ext_wind_data_t {
+        int16_t n_wind_vel; // kt*100
+        int16_t e_wind_vel; // kt*100
+        uint16_t n_std_wind; // kt*100
+        uint16_t e_std_wind; // kt*100
     };
 
     union PACKED ILabsData {
@@ -157,7 +220,20 @@ public:
         uint16_t supply_voltage; // V*100
         int16_t temperature; // degC*10
         uint16_t unit_status2;
+        gnss_dop_t gnss_dop; // 10e3
+        uint8_t ins_sol_status;
+        ins_accuracy_t ins_accuracy;
         full_sat_info_t full_sat_info;
+        uint16_t gnss_vel_latency;
+        uint8_t gnss_sol_status;
+        uint16_t new_aiding_data;
+        uint16_t new_aiding_data2;
+        int16_t external_speed;
+        ext_hor_pos_t ext_hor_pos;
+        ext_alt_t ext_alt;
+        ext_heading_t ext_heading;
+        ext_ambient_data_t ext_ambient_air_data;
+        ext_wind_data_t ext_wind_data;
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -201,6 +277,23 @@ private:
         float supply_voltage;
         full_sat_info_t full_sat_info;
     } state2;
+
+    struct {
+        gnss_dop_t gnss_dop; // 10e3
+        uint8_t ins_sol_status;
+        ins_accuracy_t ins_accuracy;
+        full_sat_info_t full_sat_info;
+        uint16_t gnss_vel_latency;
+        uint8_t gnss_sol_status;
+        uint16_t new_aiding_data;
+        uint16_t new_aiding_data2;
+        int16_t external_speed;
+        ext_hor_pos_t ext_hor_pos;
+        ext_alt_t ext_alt;
+        ext_heading_t ext_heading;
+        ext_ambient_data_t ext_ambient_air_data;
+        ext_wind_data_t ext_wind_data;
+    } state3;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
