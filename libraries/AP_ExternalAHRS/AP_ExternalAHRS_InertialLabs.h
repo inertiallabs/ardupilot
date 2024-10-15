@@ -243,7 +243,7 @@ public:
     AP_ExternalAHRS::airspeed_data_message_t airspeed_data;
 
     uint16_t buffer_ofs;
-    uint8_t buffer[256]; // max for normal message set is 167+8
+    uint8_t buffer[512]; // payload is 218 bytes, full message is 264 bytes
 
 private:
     AP_HAL::UARTDriver *uart;
@@ -279,7 +279,7 @@ private:
     } state2;
 
     struct {
-        gnss_dop_t gnss_dop; // 10e3
+        gnss_dop_t gnss_dop;
         uint8_t ins_sol_status;
         ins_accuracy_t ins_accuracy;
         full_sat_info_t full_sat_info;
