@@ -768,7 +768,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     ilab_gps_data.full_sat_info.GPS_time_status, ilab_gps_data.full_sat_info.ext_sol_status);
     }
 
-    if (ilab_ext_data.new_aiding_data != 0) {
+    if ((ilab_ext_data.new_aiding_data & (IL_NewAidingData::NEW_EXT_POS |
+                                          IL_NewAidingData::NEW_EXT_HOR_POS |
+                                          IL_NewAidingData::NEW_ALTITUDE |
+                                          IL_NewAidingData::NEW_HEADING)) != 0) {
         // @LoggerMessage: ILB7
         // @Description: InertialLabs AHRS data7
         // @Field: TimeUS: Time since system startup
@@ -799,7 +802,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     static_cast<float>(ilab_ext_data.ext_heading.heading)*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_heading.std)*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_heading.latency)*1.0e-3f);
+    }
 
+    if ((ilab_ext_data.new_aiding_data & (IL_NewAidingData::NEW_AMBIENT |
+                                          IL_NewAidingData::NEW_WIND |
+                                          IL_NewAidingData::NEW_AIRSPEED)) != 0) {
         // @LoggerMessage: ILB8
         // @Description: InertialLabs AHRS data8
         // @Field: TimeUS: Time since system startup
