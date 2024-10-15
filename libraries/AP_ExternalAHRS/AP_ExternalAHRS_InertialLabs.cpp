@@ -79,6 +79,8 @@ extern const AP_HAL::HAL &hal;
 #define ILABS_AIRDATA_AIRSPEED_FAIL               0x0080
 #define ILABS_AIRDATA_BELOW_THRESHOLD             0x0100
 
+// acceleration due to gravity in m/s/s used in IL INS
+#define IL_GRAVITY_MSS     9.8106f
 
 // constructor
 AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_frontend,
@@ -254,233 +256,220 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         msg_types.set(unsigned(mtype));
 
         switch (mtype) {
-        case MessageType::GPS_INS_TIME_MS: {
-            // this is the GPS tow timestamp in ms for when the IMU data was sampled
-            CHECK_SIZE(u.gps_time_ms);
-            state2.gnss_ins_time_ms = u.gps_time_ms;
-            break;
-        }
-        case MessageType::GPS_WEEK: {
-            CHECK_SIZE(u.gps_week);
-            gps_data.gps_week = u.gps_week;
-            break;
-        }
-        case MessageType::ACCEL_DATA_HR: {
-            CHECK_SIZE(u.accel_data_hr);
-            ins_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*GRAVITY_MSS*1.0e-6;
-            break;
-        }
-        case MessageType::GYRO_DATA_HR: {
-            CHECK_SIZE(u.gyro_data_hr);
-            ins_data.gyro = u.gyro_data_hr.tofloat().rfu_to_frd()*DEG_TO_RAD*1.0e-5;
-            break;
-        }
-        case MessageType::BARO_DATA: {
-            CHECK_SIZE(u.baro_data);
-            baro_data.pressure_pa = u.baro_data.pressure_pa2*2;
-            break;
-        }
-        case MessageType::MAG_DATA: {
-            CHECK_SIZE(u.mag_data);
-            mag_data.field = u.mag_data.tofloat().rfu_to_frd()*(10*NTESLA_TO_MGAUSS);
-            break;
-        }
-        case MessageType::ORIENTATION_ANGLES: {
-            CHECK_SIZE(u.orientation_angles);
-            state.quat.from_euler(radians(u.orientation_angles.roll*0.01),
-                                  radians(u.orientation_angles.pitch*0.01),
-                                  radians(u.orientation_angles.yaw*0.01));
-            state.have_quaternion = true;
-            if (last_att_ms == 0) {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: got link");
+            case MessageType::GPS_INS_TIME_MS: {
+                // this is the GPS tow timestamp in ms for when the IMU data was sampled
+                CHECK_SIZE(u.gps_time_ms);
+                ilab_ins_data.ms_tow = u.gps_time_ms;
+                break;
             }
-            last_att_ms = now_ms;
-            break;
-        }
-        case MessageType::VELOCITIES: {
-            CHECK_SIZE(u.velocity);
-            state.velocity = u.velocity.tofloat().rfu_to_frd()*0.01;
-            state.have_velocity = true;
-            last_vel_ms = now_ms;
-            break;
-        }
-        case MessageType::POSITION: {
-            CHECK_SIZE(u.position);
-            state.location.lat = u.position.lat;
-            state.location.lng = u.position.lon;
-            state.location.alt = u.position.alt;
-            state.have_location = true;
-            state.last_location_update_us = AP_HAL::micros();
-            last_pos_ms = now_ms;
-            break;
-        }
-        case MessageType::UNIT_STATUS: {
-            CHECK_SIZE(u.unit_status);
-            state2.unit_status = u.unit_status;
-            break;
-        }
-        case MessageType::GNSS_EXTENDED_INFO: {
-            CHECK_SIZE(u.gnss_extended_info);
-            gps_data.fix_type = u.gnss_extended_info.fix_type+1;
-            state2.gnss_extended_info = u.gnss_extended_info;
-            break;
-        }
-        case MessageType::GNSS_POSITION: {
-            CHECK_SIZE(u.position);
-            gps_data.latitude = u.position.lat;
-            gps_data.longitude = u.position.lon;
-            gps_data.msl_altitude = u.position.alt;
-            break;
-        }
-        case MessageType::GNSS_VEL_TRACK: {
-            CHECK_SIZE(u.gnss_vel_track);
-            Vector2f velxy;
-            velxy.offset_bearing(u.gnss_vel_track.track_over_ground*0.01, u.gnss_vel_track.hor_speed*0.01);
-            gps_data.ned_vel_north = velxy.x;
-            gps_data.ned_vel_east = velxy.y;
-            gps_data.ned_vel_down = -u.gnss_vel_track.ver_speed*0.01;
-            break;
-        }
-        case MessageType::GNSS_POS_TIMESTAMP: {
-            CHECK_SIZE(u.gnss_pos_timestamp);
-            gps_data.ms_tow = u.gnss_pos_timestamp;
-            break;
-        }
-        case MessageType::GNSS_NEW_DATA: {
-            CHECK_SIZE(u.gnss_new_data);
-            state2.gnss_new_data = u.gnss_new_data;
-            break;
-        }
-        case MessageType::GNSS_JAM_STATUS: {
-            CHECK_SIZE(u.gnss_jam_status);
-            state2.gnss_jam_status = u.gnss_jam_status;
-            break;
-        }
-        case MessageType::DIFFERENTIAL_PRESSURE: {
-            CHECK_SIZE(u.differential_pressure);
-            airspeed_data.differential_pressure = u.differential_pressure*1.0e-4;
-            break;
-        }
-        case MessageType::TRUE_AIRSPEED: {
-            CHECK_SIZE(u.true_airspeed);
-            state2.true_airspeed = u.true_airspeed*0.01;
-            break;
-        }
-        case MessageType::WIND_SPEED: {
-            CHECK_SIZE(u.wind_speed);
-            state2.wind_speed = u.wind_speed.tofloat().rfu_to_frd()*0.01;
-            break;
-        }
-        case MessageType::AIR_DATA_STATUS: {
-            CHECK_SIZE(u.air_data_status);
-            state2.air_data_status = u.air_data_status;
-            break;
-        }
-        case MessageType::SUPPLY_VOLTAGE: {
-            CHECK_SIZE(u.supply_voltage);
-            state2.supply_voltage = u.supply_voltage*0.01;
-            break;
-        }
-        case MessageType::TEMPERATURE: {
-            CHECK_SIZE(u.temperature);
-            // assume same temperature for baro and airspeed
-            baro_data.temperature = u.temperature*0.1;
-            airspeed_data.temperature = u.temperature*0.1;
-            break;
-        }
-        case MessageType::UNIT_STATUS2: {
-            CHECK_SIZE(u.unit_status2);
-            state2.unit_status2 = u.unit_status2;
-            break;
-        }
-        case MessageType::GNSS_DOP: {
-            CHECK_SIZE(u.gnss_dop);
-            state3.gnss_dop.gdop = u.gnss_dop.gdop * 1.0e-3f;
-            state3.gnss_dop.pdop = u.gnss_dop.pdop * 1.0e-3f;
-            state3.gnss_dop.hdop = u.gnss_dop.hdop * 1.0e-3f;
-            state3.gnss_dop.vdop = u.gnss_dop.vdop * 1.0e-3f;
-            state3.gnss_dop.tdop = u.gnss_dop.tdop * 1.0e-3f;
-            break;
-        }
-        case MessageType::INS_SOLUTION_STATUS: {
-            CHECK_SIZE(u.ins_sol_status);
-            state3.ins_sol_status = u.ins_sol_status;
-            break;
-        }
-        case MessageType::INS_POS_VEL_ACCURACY: {
-            CHECK_SIZE(u.ins_accuracy);
-            state3.ins_accuracy.lat = u.ins_accuracy.lat * 1.0e-3f;
-            state3.ins_accuracy.lon = u.ins_accuracy.lon * 1.0e-3f;
-            state3.ins_accuracy.alt = u.ins_accuracy.alt * 1.0e-3f;
-            state3.ins_accuracy.east_vel = u.ins_accuracy.east_vel * 1.0e-3f;
-            state3.ins_accuracy.north_vel = u.ins_accuracy.north_vel * 1.0e-3f;
-            state3.ins_accuracy.ver_vel = u.ins_accuracy.ver_vel * 1.0e-3f;
-            break;
-        }
-        case MessageType::FULL_SAT_INFO: {
-            CHECK_SIZE(u.full_sat_info);
-            state2.full_sat_info.SVs = u.full_sat_info.SVs;
-            state2.full_sat_info.SolnSVs = u.full_sat_info.SolnSVs;
-            state2.full_sat_info.SolnL1SVs = u.full_sat_info.SolnL1SVs;
-            state2.full_sat_info.SolnMultiSVs = u.full_sat_info.SolnMultiSVs;
-            state2.full_sat_info.signal_used1 = u.full_sat_info.signal_used1;
-            state2.full_sat_info.signal_used2 = u.full_sat_info.signal_used2;
-            state2.full_sat_info.GPS_time_status = u.full_sat_info.GPS_time_status;
-            state2.full_sat_info.ext_sol_status = u.full_sat_info.ext_sol_status;
-
-            gps_data.satellites_in_view = state2.full_sat_info.SolnSVs;
-            break;
-        }
-        case MessageType::GNSS_VEL_LATENCY: {
-            CHECK_SIZE(u.gnss_vel_latency);
-            state3.gnss_vel_latency = u.gnss_vel_latency;
-            break;
-        }
-        case MessageType::GNSS_SOL_STATUS: {
-            CHECK_SIZE(u.gnss_sol_status);
-            state3.gnss_sol_status = u.gnss_sol_status;
-            break;
-        }
-        case MessageType::NEW_AIDING_DATA: {
-            CHECK_SIZE(u.new_aiding_data);
-            state3.new_aiding_data = u.new_aiding_data;
-            break;
-        }
-        case MessageType::NEW_AIDING_DATA2: {
-            CHECK_SIZE(u.new_aiding_data2);
-            state3.new_aiding_data2 = u.new_aiding_data2;
-            break;
-        }
-        case MessageType::EXT_SPEED: {
-            CHECK_SIZE(u.external_speed);
-            state3.external_speed = u.external_speed;
-            break;
-        }
-        case MessageType::EXT_HOR_POS: {
-            CHECK_SIZE(u.ext_hor_pos);
-            state3.ext_hor_pos = u.ext_hor_pos;
-            break;
-        }
-        case MessageType::EXT_ALT: {
-            CHECK_SIZE(u.ext_alt);
-            state3.ext_alt = u.ext_alt;
-            break;
-        }
-        case MessageType::EXT_HEADING: {
-            CHECK_SIZE(u.ext_heading);
-            state3.ext_heading = u.ext_heading;
-            break;
-        }
-        case MessageType::EXT_AMBIENT_DATA: {
-            CHECK_SIZE(u.ext_ambient_air_data);
-            state3.ext_ambient_air_data = u.ext_ambient_air_data;
-            break;
-        }
-        case MessageType::EXT_WIND_DATA: {
-            CHECK_SIZE(u.ext_wind_data);
-            state3.ext_wind_data = u.ext_wind_data;
-            break;
-        }
+            case MessageType::GPS_WEEK: {
+                CHECK_SIZE(u.gps_week);
+                ilab_gps_data.gps_week = u.gps_week;
+                break;
+            }
+            case MessageType::ACCEL_DATA_HR: {
+                CHECK_SIZE(u.accel_data_hr);
+                ilab_sensors_data.accel = u.accel_data_hr.tofloat().rfu_to_frd()*IL_GRAVITY_MSS*1.0e-6f; // NED, in m/s/s
+                break;
+            }
+            case MessageType::GYRO_DATA_HR: {
+                CHECK_SIZE(u.gyro_data_hr);
+                ilab_sensors_data.gyro = u.gyro_data_hr.tofloat().rfu_to_frd()*DEG_TO_RAD*1.0e-5f; // NED, in rad
+                break;
+            }
+            case MessageType::BARO_DATA: {
+                CHECK_SIZE(u.baro_data);
+                ilab_sensors_data.pressure = static_cast<float>(u.baro_data.pressure_pa2)*2.0f;
+                ilab_ins_data.baro_alt = static_cast<float>(u.baro_data.baro_alt)*0.01f; // m
+                break;
+            }
+            case MessageType::MAG_DATA: {
+                CHECK_SIZE(u.mag_data);
+                ilab_sensors_data.mag = u.mag_data.tofloat().rfu_to_frd()*(10.0f*NTESLA_TO_MGAUSS); // NED, in milligauss
+                break;
+            }
+            case MessageType::ORIENTATION_ANGLES: {
+                CHECK_SIZE(u.orientation_angles);
+                ilab_ins_data.yaw = static_cast<float>(u.orientation_angles.yaw)*0.01f; // deg
+                ilab_ins_data.pitch = static_cast<float>(u.orientation_angles.pitch)*0.01f; // deg
+                ilab_ins_data.roll = static_cast<float>(u.orientation_angles.roll)*0.01f; // deg
+                break;
+            }
+            case MessageType::VELOCITIES: {
+                CHECK_SIZE(u.velocity);
+                ilab_ins_data.velocity = u.velocity.tofloat().rfu_to_frd()*0.01f; // NED, in m/s
+                break;
+            }
+            case MessageType::POSITION: {
+                CHECK_SIZE(u.position);
+                ilab_ins_data.latitude = u.position.lat; // deg*1.0e7
+                ilab_ins_data.longitude = u.position.lon; // deg*1.0e7
+                ilab_ins_data.altitude = u.position.alt; // cm
+                break;
+            }
+            case MessageType::UNIT_STATUS: {
+                CHECK_SIZE(u.unit_status);
+                ilab_ins_data.unit_status = u.unit_status;
+                break;
+            }
+            case MessageType::GNSS_EXTENDED_INFO: {
+                CHECK_SIZE(u.gnss_extended_info);
+                ilab_gps_data.fix_type = u.gnss_extended_info.fix_type;
+                ilab_gps_data.spoof_status = u.gnss_extended_info.spoofing_status;
+                break;
+            }
+            case MessageType::GNSS_POSITION: {
+                CHECK_SIZE(u.position);
+                ilab_gps_data.latitude = u.position.lat;
+                ilab_gps_data.longitude = u.position.lon;
+                ilab_gps_data.altitude = u.position.alt;
+                break;
+            }
+            case MessageType::GNSS_VEL_TRACK: {
+                CHECK_SIZE(u.gnss_vel_track);
+                ilab_gps_data.hor_speed = static_cast<float>(u.gnss_vel_track.hor_speed)*0.01f; // m/s
+                ilab_gps_data.track_over_ground = static_cast<float>(u.gnss_vel_track.track_over_ground)*0.01f; // deg
+                ilab_gps_data.ver_speed = static_cast<float>(u.gnss_vel_track.ver_speed)*0.01f; // m/s
+                break;
+            }
+            case MessageType::GNSS_POS_TIMESTAMP: {
+                CHECK_SIZE(u.gnss_pos_timestamp);
+                ilab_gps_data.ms_tow = u.gnss_pos_timestamp;
+                break;
+            }
+            case MessageType::GNSS_NEW_DATA: {
+                CHECK_SIZE(u.gnss_new_data);
+                ilab_gps_data.new_data = u.gnss_new_data;
+                break;
+            }
+            case MessageType::GNSS_JAM_STATUS: {
+                CHECK_SIZE(u.gnss_jam_status);
+                ilab_gps_data.jam_status = u.gnss_jam_status;
+                break;
+            }
+            case MessageType::DIFFERENTIAL_PRESSURE: {
+                CHECK_SIZE(u.differential_pressure);
+                ilab_sensors_data.diff_press = static_cast<float>(u.differential_pressure)*0.01f; // Pa
+                break;
+            }
+            case MessageType::TRUE_AIRSPEED: {
+                CHECK_SIZE(u.true_airspeed);
+                ilab_ins_data.true_airspeed = static_cast<float>(u.true_airspeed)*0.01f;
+                break;
+            }
+            case MessageType::WIND_SPEED: {
+                CHECK_SIZE(u.wind_speed);
+                ilab_ins_data.airspeed_sf = u.wind_speed.tofloat().z*1.0e-3f;
+                ilab_ins_data.wind_speed = u.wind_speed.tofloat().rfu_to_frd()*0.01f; // NED, in m/s
+                ilab_ins_data.wind_speed.z = 0.0f;
+                break;
+            }
+            case MessageType::AIR_DATA_STATUS: {
+                CHECK_SIZE(u.air_data_status);
+                ilab_ins_data.air_data_status = u.air_data_status;
+                break;
+            }
+            case MessageType::SUPPLY_VOLTAGE: {
+                CHECK_SIZE(u.supply_voltage);
+                ilab_sensors_data.supply_voltage = static_cast<float>(u.supply_voltage)*0.01f;
+                break;
+            }
+            case MessageType::TEMPERATURE: {
+                CHECK_SIZE(u.temperature);
+                ilab_sensors_data.temperature = static_cast<float>(u.temperature)*0.1f;
+                break;
+            }
+            case MessageType::UNIT_STATUS2: {
+                CHECK_SIZE(u.unit_status2);
+                ilab_ins_data.unit_status2 = u.unit_status2;
+                break;
+            }
+            case MessageType::GNSS_DOP: {
+                CHECK_SIZE(u.gnss_dop);
+                ilab_gps_data.dop.gdop = u.gnss_dop.gdop;
+                ilab_gps_data.dop.pdop = u.gnss_dop.pdop;
+                ilab_gps_data.dop.hdop = u.gnss_dop.hdop;
+                ilab_gps_data.dop.vdop = u.gnss_dop.vdop;
+                ilab_gps_data.dop.tdop = u.gnss_dop.tdop;
+                break;
+            }
+            case MessageType::INS_SOLUTION_STATUS: {
+                CHECK_SIZE(u.ins_sol_status);
+                ilab_ins_data.ins_sol_status = u.ins_sol_status;
+                break;
+            }
+            case MessageType::INS_POS_VEL_ACCURACY: {
+                CHECK_SIZE(u.ins_accuracy);
+                ilab_ins_data.ins_accuracy.lat = u.ins_accuracy.lat;
+                ilab_ins_data.ins_accuracy.lon = u.ins_accuracy.lon;
+                ilab_ins_data.ins_accuracy.alt = u.ins_accuracy.alt;
+                ilab_ins_data.ins_accuracy.east_vel = u.ins_accuracy.east_vel;
+                ilab_ins_data.ins_accuracy.north_vel = u.ins_accuracy.north_vel;
+                ilab_ins_data.ins_accuracy.ver_vel = u.ins_accuracy.ver_vel;
+                break;
+            }
+            case MessageType::FULL_SAT_INFO: {
+                CHECK_SIZE(u.full_sat_info);
+                ilab_gps_data.full_sat_info.SVs = u.full_sat_info.SVs;
+                ilab_gps_data.full_sat_info.SolnSVs = u.full_sat_info.SolnSVs;
+                ilab_gps_data.full_sat_info.SolnL1SVs = u.full_sat_info.SolnL1SVs;
+                ilab_gps_data.full_sat_info.SolnMultiSVs = u.full_sat_info.SolnMultiSVs;
+                ilab_gps_data.full_sat_info.signal_used1 = u.full_sat_info.signal_used1;
+                ilab_gps_data.full_sat_info.signal_used2 = u.full_sat_info.signal_used2;
+                ilab_gps_data.full_sat_info.GPS_time_status = u.full_sat_info.GPS_time_status;
+                ilab_gps_data.full_sat_info.ext_sol_status = u.full_sat_info.ext_sol_status;
+                break;
+            }
+            case MessageType::GNSS_VEL_LATENCY: {
+                CHECK_SIZE(u.gnss_vel_latency);
+                ilab_gps_data.vel_latency = u.gnss_vel_latency;
+                break;
+            }
+            case MessageType::GNSS_SOL_STATUS: {
+                CHECK_SIZE(u.gnss_sol_status);
+                ilab_gps_data.gnss_sol_status = u.gnss_sol_status;
+                break;
+            }
+            case MessageType::NEW_AIDING_DATA: {
+                CHECK_SIZE(u.new_aiding_data);
+                ilab_ext_data.new_aiding_data = u.new_aiding_data;
+                break;
+            }
+            case MessageType::NEW_AIDING_DATA2: {
+                CHECK_SIZE(u.new_aiding_data2);
+                ilab_ext_data.new_aiding_data2 = u.new_aiding_data2;
+                break;
+            }
+            case MessageType::EXT_SPEED: {
+                CHECK_SIZE(u.external_speed);
+                ilab_ext_data.external_speed = u.external_speed;
+                break;
+            }
+            case MessageType::EXT_HOR_POS: {
+                CHECK_SIZE(u.ext_hor_pos);
+                ilab_ext_data.ext_hor_pos = u.ext_hor_pos;
+                break;
+            }
+            case MessageType::EXT_ALT: {
+                CHECK_SIZE(u.ext_alt);
+                ilab_ext_data.ext_alt = u.ext_alt;
+                break;
+            }
+            case MessageType::EXT_HEADING: {
+                CHECK_SIZE(u.ext_heading);
+                ilab_ext_data.ext_heading = u.ext_heading;
+                break;
+            }
+            case MessageType::EXT_AMBIENT_DATA: {
+                CHECK_SIZE(u.ext_ambient_air_data);
+                ilab_ext_data.ext_ambient_air_data = u.ext_ambient_air_data;
+                break;
+            }
+            case MessageType::EXT_WIND_DATA: {
+                CHECK_SIZE(u.ext_wind_data);
+                ilab_ext_data.ext_wind_data = u.ext_wind_data;
+                break;
+            }
         }
 
         if (msg_len == 0) {
@@ -503,45 +492,90 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         return false;
     }
 
+    if (GOT_MSG(ORIENTATION_ANGLES)) {
+        // use IL INS attitude data in the ArduPilot algorithm
+        state.quat.from_euler(radians(ilab_ins_data.roll),
+                              radians(ilab_ins_data.pitch),
+                              radians(ilab_ins_data.yaw));
+        state.have_quaternion = true;
+        if (last_att_ms == 0) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: got link");
+        }
+
+        last_att_ms = now_ms;
+    }
+
     if (GOT_MSG(ACCEL_DATA_HR) &&
         GOT_MSG(GYRO_DATA_HR)) {
+        // use IL INS IMU outputs in the ArduPilot algorithm instead of EKF3 or DCM
+        ins_data.accel = ilab_sensors_data.accel;
+        ins_data.gyro = ilab_sensors_data.gyro;
         AP::ins().handle_external(ins_data);
         state.accel = ins_data.accel;
         state.gyro = ins_data.gyro;
     }
-    if (GOT_MSG(GPS_INS_TIME_MS) &&
-        GOT_MSG(FULL_SAT_INFO) &&
-        GOT_MSG(GNSS_POSITION) &&
-        GOT_MSG(GNSS_NEW_DATA) &&
-        GOT_MSG(GNSS_EXTENDED_INFO) &&
-        state2.gnss_new_data != 0) {
-        uint8_t instance;
-        if (AP::gps().get_first_external_instance(instance)) {
-            AP::gps().handle_external(gps_data, instance);
-        }
-        if (gps_data.satellites_in_view > 3) {
-            if (last_gps_ms == 0) {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: got GPS lock");
-                if (!state.have_origin) {
-                    state.origin = Location{
-                        gps_data.latitude,
-                        gps_data.longitude,
-                        gps_data.msl_altitude,
-                        Location::AltFrame::ABSOLUTE};
-                    state.have_origin = true;
-                }
+    if (GOT_MSG(POSITION) &&
+        GOT_MSG(VELOCITIES)) {
+        state.location.lat = ilab_ins_data.latitude;
+        state.location.lng = ilab_ins_data.longitude;
+        state.location.alt = ilab_ins_data.altitude;
+        state.velocity = ilab_ins_data.velocity;
+        state.have_velocity = true;
+        state.have_location = true;
+        state.last_location_update_us = AP_HAL::micros();
+
+        last_vel_ms = now_ms;
+        last_pos_ms = now_ms;
+
+        if (GOT_MSG(GPS_INS_TIME_MS) &&
+            GOT_MSG(FULL_SAT_INFO) &&
+            GOT_MSG(GNSS_NEW_DATA) &&
+            GOT_MSG(GNSS_EXTENDED_INFO) &&
+            ilab_gps_data.new_data != 0) {
+            // use IL INS navigation solution instead of GNSS solution
+            gps_data.ms_tow = ilab_ins_data.ms_tow;
+            gps_data.longitude = ilab_ins_data.latitude;
+            gps_data.latitude = ilab_ins_data.longitude;
+            gps_data.msl_altitude = ilab_ins_data.altitude;
+            gps_data.ned_vel_north = ilab_ins_data.velocity.x;
+            gps_data.ned_vel_east = ilab_ins_data.velocity.y;
+            gps_data.ned_vel_down = ilab_ins_data.velocity.z;
+            gps_data.satellites_in_view = ilab_gps_data.full_sat_info.SolnSVs;
+            gps_data.hdop = static_cast<float>(ilab_gps_data.dop.hdop)*0.1f;
+            gps_data.vdop = static_cast<float>(ilab_gps_data.dop.vdop)*0.1f;
+            gps_data.fix_type = ilab_gps_data.fix_type+1;
+
+            uint8_t instance;
+            if (AP::gps().get_first_external_instance(instance)) {
+                AP::gps().handle_external(gps_data, instance);
             }
-            last_gps_ms = now_ms;
+            if (gps_data.satellites_in_view > 3) {
+                if (last_gps_ms == 0) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: got GPS lock");
+                    if (!state.have_origin) {
+                        state.origin = Location{
+                            gps_data.latitude,
+                            gps_data.longitude,
+                            gps_data.msl_altitude,
+                            Location::AltFrame::ABSOLUTE};
+                        state.have_origin = true;
+                    }
+                }
+                last_gps_ms = now_ms;
+            }
         }
     }
 #if AP_BARO_EXTERNALAHRS_ENABLED
     if (GOT_MSG(BARO_DATA) &&
         GOT_MSG(TEMPERATURE)) {
+        baro_data.pressure_pa = ilab_sensors_data.pressure;
+        baro_data.temperature = ilab_sensors_data.temperature;
         AP::baro().handle_external(baro_data);
     }
 #endif
     #if AP_COMPASS_EXTERNALAHRS_ENABLED
     if (GOT_MSG(MAG_DATA)) {
+        mag_data.field = ilab_sensors_data.mag;
         AP::compass().handle_external(mag_data);
     }
 #endif
@@ -549,6 +583,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     // only on plane and copter as others do not link AP_Airspeed
     if (GOT_MSG(DIFFERENTIAL_PRESSURE) &&
         GOT_MSG(TEMPERATURE)) {
+        airspeed_data.differential_pressure = ilab_sensors_data.diff_press;
+        airspeed_data.temperature = ilab_sensors_data.temperature;
         auto *arsp = AP::airspeed();
         if (arsp != nullptr) {
             arsp->handle_external(airspeed_data);
@@ -586,11 +622,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F---------",
                                     "QHHBBBffff",
                                     now_us,
-                                    state2.unit_status, state2.unit_status2,
-                                    state2.gnss_extended_info.fix_type, state2.gnss_extended_info.spoofing_status,
-                                    state2.gnss_jam_status,
-                                    state2.true_airspeed,
-                                    state2.wind_speed.x, state2.wind_speed.y, state2.wind_speed.z);
+                                    ilab_ins_data.unit_status, ilab_ins_data.unit_status2,
+                                    ilab_gps_data.fix_type, ilab_gps_data.spoof_status,
+                                    ilab_gps_data.jam_status,
+                                    ilab_ins_data.true_airspeed,
+                                    ilab_ins_data.wind_speed.x, ilab_ins_data.wind_speed.y, ilab_ins_data.airspeed_sf);
     }
 #endif  // HAL_LOGGING_ENABLED
 
@@ -670,7 +706,7 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
     const uint32_t dt_limit = 200;
     const uint32_t dt_limit_gps = 500;
     memset(&status, 0, sizeof(status));
-    const bool init_ok = (state2.unit_status & (ILABS_UNIT_STATUS_ALIGNMENT_FAIL|ILABS_UNIT_STATUS_OPERATION_FAIL))==0;
+    const bool init_ok = (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_ALIGNMENT_FAIL|ILABS_UNIT_STATUS_OPERATION_FAIL))==0;
     status.flags.initalized = init_ok;
     status.flags.attitude = init_ok && (now - last_att_ms < dt_limit) && init_ok;
     status.flags.vert_vel = init_ok && (now - last_vel_ms < dt_limit);
@@ -681,11 +717,11 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
     status.flags.pred_horiz_pos_rel = status.flags.horiz_pos_abs;
     status.flags.pred_horiz_pos_abs = status.flags.horiz_pos_abs;
     status.flags.using_gps = (now - last_gps_ms < dt_limit_gps) &&
-        (state2.unit_status & (ILABS_UNIT_STATUS_GNSS_FAIL|ILABS_UNIT_STATUS2_GNSS_FUSION_OFF)) == 0;
+        (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_GNSS_FAIL|ILABS_UNIT_STATUS2_GNSS_FUSION_OFF)) == 0;
     status.flags.gps_quality_good = (now - last_gps_ms < dt_limit_gps) &&
-        (state2.unit_status2 & ILABS_UNIT_STATUS2_GNSS_POS_VALID) != 0 &&
-        (state2.unit_status & ILABS_UNIT_STATUS_GNSS_FAIL) == 0;
-    status.flags.rejecting_airspeed = (state2.air_data_status & ILABS_AIRDATA_AIRSPEED_FAIL);
+        (ilab_ins_data.unit_status2 & ILABS_UNIT_STATUS2_GNSS_POS_VALID) != 0 &&
+        (ilab_ins_data.unit_status & ILABS_UNIT_STATUS_GNSS_FAIL) == 0;
+    status.flags.rejecting_airspeed = (ilab_ins_data.air_data_status & ILABS_AIRDATA_AIRSPEED_FAIL);
 }
 
 // send an EKF_STATUS message to GCS
