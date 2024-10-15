@@ -706,22 +706,23 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
     const uint32_t dt_limit = 200;
     const uint32_t dt_limit_gps = 500;
     memset(&status, 0, sizeof(status));
-    const bool init_ok = (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_ALIGNMENT_FAIL|ILABS_UNIT_STATUS_OPERATION_FAIL))==0;
+
+    const bool init_ok = (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_ALIGNMENT_FAIL|ILABS_UNIT_STATUS_OPERATION_FAIL)) == 0;
+
     status.flags.initalized = init_ok;
-    status.flags.attitude = init_ok && (now - last_att_ms < dt_limit) && init_ok;
+
+    status.flags.attitude = init_ok && (now - last_att_ms < dt_limit);
     status.flags.vert_vel = init_ok && (now - last_vel_ms < dt_limit);
     status.flags.vert_pos = init_ok && (now - last_pos_ms < dt_limit);
     status.flags.horiz_vel = status.flags.vert_vel;
     status.flags.horiz_pos_abs = status.flags.vert_pos;
-    status.flags.horiz_pos_rel = status.flags.horiz_pos_abs;
-    status.flags.pred_horiz_pos_rel = status.flags.horiz_pos_abs;
-    status.flags.pred_horiz_pos_abs = status.flags.horiz_pos_abs;
-    status.flags.using_gps = (now - last_gps_ms < dt_limit_gps) &&
-        (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_GNSS_FAIL|ILABS_UNIT_STATUS2_GNSS_FUSION_OFF)) == 0;
-    status.flags.gps_quality_good = (now - last_gps_ms < dt_limit_gps) &&
-        (ilab_ins_data.unit_status2 & ILABS_UNIT_STATUS2_GNSS_POS_VALID) != 0 &&
-        (ilab_ins_data.unit_status & ILABS_UNIT_STATUS_GNSS_FAIL) == 0;
-    status.flags.rejecting_airspeed = (ilab_ins_data.air_data_status & ILABS_AIRDATA_AIRSPEED_FAIL);
+    status.flags.horiz_pos_rel = status.flags.vert_pos;
+    status.flags.pred_horiz_pos_abs = status.flags.vert_pos;
+
+    status.flags.using_gps = (now - last_gps_ms < dt_limit_gps);
+    status.flags.gps_quality_good = (now - last_gps_ms < dt_limit_gps);
+
+    status.flags.rejecting_airspeed = false;
 }
 
 // send an EKF_STATUS message to GCS
