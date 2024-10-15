@@ -134,20 +134,20 @@ public:
     };
 
     struct PACKED gnss_dop_t {
-        uint16_t gdop;
-        uint16_t pdop;
-        uint16_t hdop;
-        uint16_t vdop;
-        uint16_t tdop;
+        uint16_t gdop; // *103
+        uint16_t pdop; // *103
+        uint16_t hdop; // *103
+        uint16_t vdop; // *103
+        uint16_t tdop; // *103
     };
 
     struct PACKED ins_accuracy_t {
-        int32_t lat;
-        int32_t lon;
-        int32_t alt;
-        int32_t east_vel;
-        int32_t north_vel;
-        int32_t ver_vel;
+        int32_t lat; // m*1000
+        int32_t lon; // m*1000
+        int32_t alt; // m*1000
+        int32_t east_vel; // m/s*1000
+        int32_t north_vel; // m/s*1000
+        int32_t ver_vel; // m/s*1000
     };
 
     struct PACKED ext_hor_pos_t {
@@ -193,7 +193,7 @@ public:
         } baro_data;
         vec3_16_t mag_data; // nT/10
         struct PACKED {
-            int16_t yaw; // deg*100
+            uint16_t yaw; // deg*100
             int16_t pitch; // deg*100
             int16_t roll; // deg*100
         } orientation_angles; // 321 euler order?
@@ -220,7 +220,7 @@ public:
         uint16_t supply_voltage; // V*100
         int16_t temperature; // degC*10
         uint16_t unit_status2;
-        gnss_dop_t gnss_dop; // 10e3
+        gnss_dop_t gnss_dop;
         uint8_t ins_sol_status;
         ins_accuracy_t ins_accuracy;
         full_sat_info_t full_sat_info;
@@ -264,27 +264,55 @@ private:
     } message_lengths[];
 
     struct {
-        uint32_t gnss_ins_time_ms;
-        uint16_t unit_status;
-        uint16_t unit_status2;
-        gnss_extended_info_t gnss_extended_info;
-        uint8_t gnss_new_data;
-        uint8_t gnss_jam_status;
-        float differential_pressure;
-        float true_airspeed;
-        Vector3f wind_speed;
-        uint16_t air_data_status;
+        Vector3f accel;
+        Vector3f gyro;
+        Vector3f mag;
+        float pressure;
+        float diff_press;
+        float temperature;
         float supply_voltage;
-        full_sat_info_t full_sat_info;
-    } state2;
+    } ilab_sensors_data;
 
     struct {
-        gnss_dop_t gnss_dop;
+        uint32_t ms_tow;
+        uint16_t gps_week;
+        int32_t latitude;
+        int32_t longitude;
+        int32_t altitude;
+        float hor_speed;
+        float ver_speed;
+        float track_over_ground;
+        gnss_dop_t dop;
+        uint8_t new_data;
+        uint8_t fix_type;
+        uint8_t spoof_status;
+        uint8_t jam_status;
+        full_sat_info_t full_sat_info;
+        uint16_t vel_latency;
+        uint8_t gnss_sol_status;
+    } ilab_gps_data;
+
+    struct {
+        float yaw;
+        float pitch;
+        float roll;
+        uint32_t ms_tow;
+        int32_t latitude;
+        int32_t longitude;
+        int32_t altitude;
+        Vector3f velocity;
+        uint16_t unit_status;
+        uint16_t unit_status2;
         uint8_t ins_sol_status;
         ins_accuracy_t ins_accuracy;
-        full_sat_info_t full_sat_info;
-        uint16_t gnss_vel_latency;
-        uint8_t gnss_sol_status;
+        float baro_alt;
+        float true_airspeed;
+        Vector3f wind_speed;
+        float airspeed_sf;
+        uint16_t air_data_status;
+    } ilab_ins_data;
+
+    struct {
         uint16_t new_aiding_data;
         uint16_t new_aiding_data2;
         int16_t external_speed;
@@ -293,7 +321,7 @@ private:
         ext_heading_t ext_heading;
         ext_ambient_data_t ext_ambient_air_data;
         ext_wind_data_t ext_wind_data;
-    } state3;
+    } ilab_ext_data;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
