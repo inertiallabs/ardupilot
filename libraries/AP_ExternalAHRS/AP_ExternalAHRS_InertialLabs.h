@@ -61,7 +61,6 @@ public:
         POSITION = 0x10,
         UNIT_STATUS = 0x53,
         GNSS_EXTENDED_INFO = 0x4A,
-        NUM_SATS = 0x3B,
         GNSS_POSITION = 0x30,
         GNSS_VEL_TRACK = 0x32,
         GNSS_POS_TIMESTAMP = 0x3E,
@@ -74,6 +73,7 @@ public:
         SUPPLY_VOLTAGE = 0x50,
         TEMPERATURE = 0x52,
         UNIT_STATUS2 = 0x5A,
+        FULL_SAT_INFO = 0x37,
     };
 
     /*
@@ -108,6 +108,17 @@ public:
         uint8_t spoofing_status;
     };
 
+    struct PACKED full_sat_info_t {
+        uint8_t SVs;
+        uint8_t SolnSVs;
+        uint8_t SolnL1SVs;
+        uint8_t SolnMultiSVs;
+        uint8_t signal_used1;
+        uint8_t signal_used2;
+        uint8_t GPS_time_status;
+        uint8_t ext_sol_status;
+    };
+
     union PACKED ILabsData {
         uint32_t gps_time_ms; // ms since start of GPS week
         uint16_t gps_week;
@@ -131,7 +142,6 @@ public:
         } position;
         uint16_t unit_status; // set ILABS_UNIT_STATUS_*
         gnss_extended_info_t gnss_extended_info;
-        uint8_t num_sats;
         struct PACKED {
             int32_t hor_speed; // m/s*100
             uint16_t track_over_ground; // deg*100
@@ -147,6 +157,7 @@ public:
         uint16_t supply_voltage; // V*100
         int16_t temperature; // degC*10
         uint16_t unit_status2;
+        full_sat_info_t full_sat_info;
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -188,6 +199,7 @@ private:
         Vector3f wind_speed;
         uint16_t air_data_status;
         float supply_voltage;
+        full_sat_info_t full_sat_info;
     } state2;
 
     uint32_t last_att_ms;
