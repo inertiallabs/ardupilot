@@ -254,6 +254,7 @@ private:
     void update_thread();
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
+    uint16_t get_num_points_to_dec(const uint16_t rate) const; // get number of points to downsampling
 
     // re-sync on header bytes
     void re_sync(void);
@@ -263,7 +264,7 @@ private:
         uint8_t length;
     } message_lengths[];
 
-    struct {
+    struct ILAB_SENSORS_DATA {
         Vector3f accel;
         Vector3f gyro;
         Vector3f mag;
@@ -271,9 +272,9 @@ private:
         float diff_press;
         float temperature;
         float supply_voltage;
-    } ilab_sensors_data;
+    };
 
-    struct {
+    struct ILAB_GPS_DATA {
         uint32_t ms_tow;
         uint16_t gps_week;
         int32_t latitude;
@@ -290,9 +291,9 @@ private:
         full_sat_info_t full_sat_info;
         uint16_t vel_latency;
         uint8_t gnss_sol_status;
-    } ilab_gps_data;
+    };
 
-    struct {
+    struct ILAB_INS_DATA{
         float yaw;
         float pitch;
         float roll;
@@ -310,9 +311,9 @@ private:
         Vector3f wind_speed;
         float airspeed_sf;
         uint16_t air_data_status;
-    } ilab_ins_data;
+    };
 
-    struct {
+    struct ILAB_EXT_DATA {
         uint16_t new_aiding_data;
         uint16_t new_aiding_data2;
         int16_t external_speed;
@@ -321,12 +322,22 @@ private:
         ext_heading_t ext_heading;
         ext_ambient_data_t ext_ambient_air_data;
         ext_wind_data_t ext_wind_data;
-    } ilab_ext_data;
+    };
+
+    ILAB_SENSORS_DATA ilab_sensors_data;
+    ILAB_GPS_DATA ilab_gps_data;
+    ILAB_INS_DATA ilab_ins_data;
+    ILAB_EXT_DATA ilab_ext_data;
+
+    ILAB_SENSORS_DATA ilab_sensors_data_avr;
+    ILAB_INS_DATA ilab_ins_data_avr;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
     uint32_t last_pos_ms;
     uint32_t last_gps_ms;
+
+    uint16_t log_counter = 0;
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
