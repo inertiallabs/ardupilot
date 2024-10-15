@@ -66,7 +66,7 @@ AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_fro
     set_default_sensors(uint16_t(AP_ExternalAHRS::AvailableSensor::GPS) |
                         uint16_t(AP_ExternalAHRS::AvailableSensor::BARO) |
                         uint16_t(AP_ExternalAHRS::AvailableSensor::COMPASS));
-    
+
     if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_InertialLabs::update_thread, void), "ILabs", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
         AP_HAL::panic("InertialLabs Failed to start ExternalAHRS update thread");
     }
@@ -255,7 +255,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::BARO_DATA: {
                 CHECK_SIZE(u.baro_data);
-                ilab_sensors_data.pressure = static_cast<float>(u.baro_data.pressure_pa2)*2.0f;
+                ilab_sensors_data.pressure = static_cast<float>(u.baro_data.pressure_pa2)*2.0f; // Pa
                 ilab_ins_data.baro_alt = static_cast<float>(u.baro_data.baro_alt)*0.01f; // m
                 break;
             }
@@ -296,9 +296,9 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::GNSS_POSITION: {
                 CHECK_SIZE(u.position);
-                ilab_gps_data.latitude = u.position.lat;
-                ilab_gps_data.longitude = u.position.lon;
-                ilab_gps_data.altitude = u.position.alt;
+                ilab_gps_data.latitude = u.position.lat; // deg*1.0e7
+                ilab_gps_data.longitude = u.position.lon; // deg*1.0e7
+                ilab_gps_data.altitude = u.position.alt; // cm
                 break;
             }
             case MessageType::GNSS_VEL_TRACK: {
@@ -330,7 +330,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::TRUE_AIRSPEED: {
                 CHECK_SIZE(u.true_airspeed);
-                ilab_ins_data.true_airspeed = static_cast<float>(u.true_airspeed)*0.01f;
+                ilab_ins_data.true_airspeed = static_cast<float>(u.true_airspeed)*0.01f; // m/s
                 break;
             }
             case MessageType::WIND_SPEED: {
@@ -347,12 +347,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
             case MessageType::SUPPLY_VOLTAGE: {
                 CHECK_SIZE(u.supply_voltage);
-                ilab_sensors_data.supply_voltage = static_cast<float>(u.supply_voltage)*0.01f;
+                ilab_sensors_data.supply_voltage = static_cast<float>(u.supply_voltage)*0.01f; // V
                 break;
             }
             case MessageType::TEMPERATURE: {
                 CHECK_SIZE(u.temperature);
-                ilab_sensors_data.temperature = static_cast<float>(u.temperature)*0.1f;
+                ilab_sensors_data.temperature = static_cast<float>(u.temperature)*0.1f; // degC
                 break;
             }
             case MessageType::UNIT_STATUS2: {
@@ -471,7 +471,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
 
     if (filter_ok) {
-        // use IL INS attitude data in the ArduPilot algorithm
+        // use IL INS attitude data in the ArduPilot algorithm instead of EKF3 or DCM
         state.quat.from_euler(radians(ilab_ins_data.roll),
                               radians(ilab_ins_data.pitch),
                               radians(ilab_ins_data.yaw));
@@ -484,7 +484,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     }
 
     if (filter_ok && (ilab_ins_data.unit_status & (IL_USW::GYRO_FAIL|IL_USW::ACCEL_FAIL)) == 0) {
-        // use IL INS IMU outputs in the ArduPilot algorithm instead of EKF3 or DCM
+        // use IL INS IMU outputs in the ArduPilot algorithm
         ins_data.accel = ilab_sensors_data.accel;
         ins_data.gyro = ilab_sensors_data.gyro;
         AP::ins().handle_external(ins_data);
@@ -495,6 +495,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     bool hasNewGpsData = (ilab_gps_data.new_data & (IL_NEWGPS::NEW_GNSS_POSITION|IL_NEWGPS::NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
 
     if (filter_ok) {
+        // use IL INS navigation solution instead of EKF3 or DCM
         state.location.lat = ilab_ins_data.latitude;
         state.location.lng = ilab_ins_data.longitude;
         state.location.alt = ilab_ins_data.altitude;
@@ -543,15 +544,16 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
 #if AP_BARO_EXTERNALAHRS_ENABLED
     if ((ilab_ins_data.unit_status2 & IL_USW2::ADU_BARO_FAIL) == 0) {
+        // use IL INS barometer output in the ArduPilot algorithm
         baro_data.pressure_pa = ilab_sensors_data.pressure;
         baro_data.temperature = ilab_sensors_data.temperature;
         AP::baro().handle_external(baro_data);
     }
-
 #endif
 
 #if AP_COMPASS_EXTERNALAHRS_ENABLED
     if ((ilab_ins_data.unit_status & IL_USW::MAG_FAIL) == 0) {
+        // use IL INS magnetometer outputs in the ArduPilot algorithm
         mag_data.field = ilab_sensors_data.mag;
         AP::compass().handle_external(mag_data);
     }
