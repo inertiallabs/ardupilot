@@ -40,6 +40,13 @@ extern const AP_HAL::HAL &hal;
 // acceleration due to gravity in m/s/s used in IL INS
 #define IL_GRAVITY_MSS     9.8106f
 
+static const uint64_t dt_critical_msg = 10000; // delay between critical messages to send GCS
+
+// initial array of timestamp of IL INS statuses
+uint64_t IL_usw_last_msg_ms[sizeof(IL_usw_msg) / sizeof(IL_usw_msg[0])] = {0};
+uint64_t IL_usw2_last_msg_ms[sizeof(IL_usw2_msg) / sizeof(IL_usw2_msg[0])] = {0};
+uint64_t IL_adu_last_msg_ms[sizeof(IL_adu_msg) / sizeof(IL_adu_msg[0])] = {0};
+
 // constructor
 AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_frontend,
                                                            AP_ExternalAHRS::state_t &_state) :
@@ -858,6 +865,96 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
 #endif  // HAL_LOGGING_ENABLED
 
+    // Send IL INS status messages to GCS via MAVLink
+    if (ilab_ins_data.unit_status != last_ins_status.unit_status) {
+        send_EAHRS_status_report(last_ins_status.unit_status, ilab_ins_data.unit_status, IL_usw_msg, IL_usw_msg_size, IL_usw_last_msg_ms); // IL INS Unit Status Word (USW) messages
+
+        if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) {
+            if ((last_ins_status.mag_clb_status & (1 << 0)) == 0) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration data accumulation");
+                last_ins_status.mag_clb_status |= (1 << 0);
+                last_ins_status.mag_clb_status &= ~(1 << 2);
+            } else {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration calculation");
+                last_ins_status.mag_clb_status |= (1 << 1);
+                last_ins_status.mag_clb_status &= ~(1 << 0);
+            }
+        }
+
+        if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_SUCCESS) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration successful");
+            last_ins_status.mag_clb_status |= (1 << 2);
+            last_ins_status.mag_clb_status &= ~(1 << 1);
+        }
+
+        if (!(last_ins_status.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) && ((last_ins_status.mag_clb_status & (1 << 1)) != 0)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration unsuccessful");
+            last_ins_status.mag_clb_status &= ~(1 << 1);
+        }
+    }
+
+    if (ilab_ins_data.unit_status2 != last_ins_status.unit_status2) {
+        send_EAHRS_status_report(last_ins_status.unit_status2, ilab_ins_data.unit_status2, IL_usw2_msg, IL_usw2_msg_size, IL_usw2_last_msg_ms); // IL INS Unit Status Word 2 (USW2) messages
+    }
+
+    if (ilab_ins_data.air_data_status != last_ins_status.air_data_status) {
+        send_EAHRS_status_report(last_ins_status.air_data_status, ilab_ins_data.air_data_status, IL_adu_msg, IL_adu_msg_size, IL_adu_last_msg_ms); // IL Air Data Unit (ADU) messages
+    }
+
+    if (last_ins_status.spoof_status != ilab_gps_data.spoof_status) {
+        // IL INS spoofing detection messages
+        if ((last_ins_status.spoof_status == 2 || last_ins_status.spoof_status == 3) && (ilab_gps_data.spoof_status == 1)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no spoofing");
+        }
+
+        if (last_ins_status.spoof_status == 2) {
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS spoofing indicated");
+        }
+
+        if (last_ins_status.spoof_status == 3) {
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS multiple spoofing indicated");
+        }
+
+        last_ins_status.spoof_status = ilab_gps_data.spoof_status;
+    }
+
+    if (last_ins_status.jam_status != ilab_gps_data.jam_status) {
+        // IL INS jamming detection messages
+        if ((last_ins_status.jam_status == 3) && (ilab_gps_data.jam_status == 1)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no jamming");
+        }
+
+        if (ilab_gps_data.jam_status == 3) {
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS jamming indicated and no fix");
+        }
+
+        last_ins_status.jam_status = ilab_gps_data.jam_status;
+    }
+
+    if (last_ins_status.ins_sol_status != ilab_ins_data.ins_sol_status) {
+        // IL INS navigation solution status messages
+        if ((last_ins_status.ins_sol_status == 4 ||
+             last_ins_status.ins_sol_status == 6 ||
+             last_ins_status.ins_sol_status == 8) &&
+             ilab_ins_data.ins_sol_status == 0) {
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS solution is good");
+        }
+
+        if (ilab_ins_data.ins_sol_status == 4) {
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS is operating in autonomous mode");
+        }
+
+        if (ilab_ins_data.ins_sol_status == 6) {
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS froze position and velocity");
+        }
+
+        if (ilab_ins_data.ins_sol_status == 8) {
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS solution is invalid");
+        }
+
+        last_ins_status.ins_sol_status = ilab_ins_data.ins_sol_status;
+    }
+
     return true;
 }
 
@@ -1017,6 +1114,36 @@ uint16_t AP_ExternalAHRS_InertialLabs::get_num_points_to_dec(const uint16_t rate
         a = temp;
     }
     return data_rate / a;
+}
+
+// send INS status to GCS via MAVLink
+void AP_ExternalAHRS_InertialLabs::send_EAHRS_status_report(uint16_t &last_state,
+                                                            uint16_t &current_state,
+                                                            const ILStatusMessage* msg_list,
+                                                            const size_t &msg_list_size,
+                                                            uint64_t* last_msg)
+{
+    uint64_t now_ms = AP_HAL::millis();
+
+    for (size_t i = 0; i <= msg_list_size; i++) {
+        bool current_status = current_state & msg_list[i].status;
+        bool last_status = last_state & msg_list[i].status;
+        if ((msg_list[i].severity == MAV_SEVERITY_CRITICAL) && (current_status == true)) {
+            if ((current_status != last_status) || (now_ms - last_msg[i] > dt_critical_msg)) {
+                GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: %s", msg_list[i].msg_true);
+                last_msg[i] = now_ms;
+                continue;
+            }
+        }
+        if (current_status != last_status) {
+            if (current_status) {
+				GCS_SEND_TEXT(msg_list[i].severity, "ILAB: %s", msg_list[i].msg_true);
+            } else {
+				GCS_SEND_TEXT(msg_list[i].severity, "ILAB: %s", msg_list[i].msg_false);
+            }
+        }
+    }
+    last_state = current_state;
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
