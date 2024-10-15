@@ -325,11 +325,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             state2.gnss_extended_info = u.gnss_extended_info;
             break;
         }
-        case MessageType::NUM_SATS: {
-            CHECK_SIZE(u.num_sats);
-            gps_data.satellites_in_view = u.num_sats;
-            break;
-        }
         case MessageType::GNSS_POSITION: {
             CHECK_SIZE(u.position);
             gps_data.latitude = u.position.lat;
@@ -398,6 +393,20 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             state2.unit_status2 = u.unit_status2;
             break;
         }
+        case MessageType::FULL_SAT_INFO: {
+            CHECK_SIZE(u.full_sat_info);
+            state2.full_sat_info.SVs = u.full_sat_info.SVs;
+            state2.full_sat_info.SolnSVs = u.full_sat_info.SolnSVs;
+            state2.full_sat_info.SolnL1SVs = u.full_sat_info.SolnL1SVs;
+            state2.full_sat_info.SolnMultiSVs = u.full_sat_info.SolnMultiSVs;
+            state2.full_sat_info.signal_used1 = u.full_sat_info.signal_used1;
+            state2.full_sat_info.signal_used2 = u.full_sat_info.signal_used2;
+            state2.full_sat_info.GPS_time_status = u.full_sat_info.GPS_time_status;
+            state2.full_sat_info.ext_sol_status = u.full_sat_info.ext_sol_status;
+
+            gps_data.satellites_in_view = state2.full_sat_info.SolnSVs;
+            break;
+        }
         }
 
         if (msg_len == 0) {
@@ -427,7 +436,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         state.gyro = ins_data.gyro;
     }
     if (GOT_MSG(GPS_INS_TIME_MS) &&
-        GOT_MSG(NUM_SATS) &&
+        GOT_MSG(FULL_SAT_INFO) &&
         GOT_MSG(GNSS_POSITION) &&
         GOT_MSG(GNSS_NEW_DATA) &&
         GOT_MSG(GNSS_EXTENDED_INFO) &&
