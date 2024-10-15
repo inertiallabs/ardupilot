@@ -84,6 +84,7 @@ enum IL_NEWGPS {
 };
 
 enum IL_NewAidingData {
+	NEW_AIRSPEED    = (1U << 1),
 	NEW_WIND        = (1U << 2),
 	NEW_EXT_POS     = (1U << 3),
 	NEW_HEADING     = (1U << 5),
