@@ -314,16 +314,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             last_pos_ms = now_ms;
             break;
         }
-        case MessageType::KF_VEL_COVARIANCE: {
-            CHECK_SIZE(u.kf_vel_covariance);
-            state2.kf_vel_covariance = u.kf_vel_covariance.tofloat() * 0.001;
-            break;
-        }
-        case MessageType::KF_POS_COVARIANCE: {
-            CHECK_SIZE(u.kf_pos_covariance);
-            state2.kf_pos_covariance = u.kf_pos_covariance.tofloat() * 0.001;
-            break;
-        }
         case MessageType::UNIT_STATUS: {
             CHECK_SIZE(u.unit_status);
             state2.unit_status = u.unit_status;
@@ -359,11 +349,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         case MessageType::GNSS_POS_TIMESTAMP: {
             CHECK_SIZE(u.gnss_pos_timestamp);
             gps_data.ms_tow = u.gnss_pos_timestamp;
-            break;
-        }
-        case MessageType::GNSS_INFO_SHORT: {
-            CHECK_SIZE(u.gnss_info_short);
-            state2.gnss_info_short = u.gnss_info_short;
             break;
         }
         case MessageType::GNSS_NEW_DATA: {
@@ -498,24 +483,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         state.quat.to_euler(roll, pitch, yaw);
         uint64_t now_us = AP_HAL::micros64();
 
-        // @LoggerMessage: ILB1
-        // @Description: InertialLabs AHRS data1
-        // @Field: TimeUS: Time since system startup
-        // @Field: PosVarN: position variance north
-        // @Field: PosVarE: position variance east
-        // @Field: PosVarD: position variance down
-        // @Field: VelVarN: velocity variance north
-        // @Field: VelVarE: velocity variance east
-        // @Field: VelVarD: velocity variance down
-
-        AP::logger().WriteStreaming("ILB1", "TimeUS,PosVarN,PosVarE,PosVarD,VelVarN,VelVarE,VelVarD",
-                                    "smmmnnn",
-                                    "F000000",
-                                    "Qffffff",
-                                    now_us,
-                                    state2.kf_pos_covariance.x, state2.kf_pos_covariance.x, state2.kf_pos_covariance.z,
-                                    state2.kf_vel_covariance.x, state2.kf_vel_covariance.x, state2.kf_vel_covariance.z);
-
         // @LoggerMessage: ILB2
         // @Description: InertialLabs AHRS data3
         // @Field: TimeUS: Time since system startup
@@ -532,13 +499,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: WVD: Wind velocity down
 
         AP::logger().WriteStreaming("ILB2", "TimeUS,Stat1,Stat2,FType,SpStat,GI1,GI2,GJS,TAS,WVN,WVE,WVD",
-                                    "s-----------",
-                                    "F-----------",
-                                    "QHHBBBBBffff",
+                                    "s---------",
+                                    "F---------",
+                                    "QHHBBBffff",
                                     now_us,
                                     state2.unit_status, state2.unit_status2,
                                     state2.gnss_extended_info.fix_type, state2.gnss_extended_info.spoofing_status,
-                                    state2.gnss_info_short.info1, state2.gnss_info_short.info2,
                                     state2.gnss_jam_status,
                                     state2.true_airspeed,
                                     state2.wind_speed.x, state2.wind_speed.y, state2.wind_speed.z);
@@ -681,15 +647,11 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     }
 
     // send message
-    const float vel_gate = 5;
-    const float pos_gate = 5;
-    const float hgt_gate = 5;
+    const float vel_var = 0;
+    const float pos_var = 0;
+    const float hgt_var = 0;
     const float mag_var = 0;
-    mavlink_msg_ekf_status_report_send(link.get_chan(), flags,
-                                       state2.kf_vel_covariance.length()/vel_gate,
-                                       state2.kf_pos_covariance.xy().length()/pos_gate,
-                                       state2.kf_pos_covariance.z/hgt_gate,
-                                       mag_var, 0, 0);
+    mavlink_msg_ekf_status_report_send(link.get_chan(), flags, vel_var, pos_var, hgt_var, mag_var, 0, 0);
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED

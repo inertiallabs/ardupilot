@@ -59,15 +59,12 @@ public:
         ORIENTATION_ANGLES = 0x07,
         VELOCITIES = 0x12,
         POSITION = 0x10,
-        KF_VEL_COVARIANCE = 0x58,
-        KF_POS_COVARIANCE = 0x57,
         UNIT_STATUS = 0x53,
         GNSS_EXTENDED_INFO = 0x4A,
         NUM_SATS = 0x3B,
         GNSS_POSITION = 0x30,
         GNSS_VEL_TRACK = 0x32,
         GNSS_POS_TIMESTAMP = 0x3E,
-        GNSS_INFO_SHORT = 0x36,
         GNSS_NEW_DATA = 0x41,
         GNSS_JAM_STATUS = 0xC0,
         DIFFERENTIAL_PRESSURE = 0x28,
@@ -105,29 +102,12 @@ public:
             return Vector3f(x,y,z);
         }
     };
-    struct PACKED vec3_u8_t {
-        uint8_t x,y,z;
-        Vector3f tofloat(void) {
-            return Vector3f(x,y,z);
-        }
-    };
-    struct PACKED vec3_u16_t {
-        uint16_t x,y,z;
-        Vector3f tofloat(void) {
-            return Vector3f(x,y,z);
-        }
-    };
 
     struct gnss_extended_info_t {
         uint8_t fix_type;
         uint8_t spoofing_status;
     };
 
-    struct gnss_info_short_t {
-        uint8_t info1;
-        uint8_t info2;
-    };
-    
     union PACKED ILabsData {
         uint32_t gps_time_ms; // ms since start of GPS week
         uint16_t gps_week;
@@ -149,8 +129,6 @@ public:
             int32_t lon; // deg*1e7
             int32_t alt; // m*100, AMSL
         } position;
-        vec3_u8_t kf_vel_covariance; // mm/s
-        vec3_u16_t kf_pos_covariance;
         uint16_t unit_status; // set ILABS_UNIT_STATUS_*
         gnss_extended_info_t gnss_extended_info;
         uint8_t num_sats;
@@ -160,7 +138,6 @@ public:
             int32_t ver_speed; // m/s*100
         } gnss_vel_track;
         uint32_t gnss_pos_timestamp; // ms
-        gnss_info_short_t gnss_info_short;
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
         int32_t differential_pressure; // mbar*1e4
@@ -200,13 +177,10 @@ private:
     } message_lengths[];
 
     struct {
-        Vector3f kf_vel_covariance;
-        Vector3f kf_pos_covariance;
         uint32_t gnss_ins_time_ms;
         uint16_t unit_status;
         uint16_t unit_status2;
         gnss_extended_info_t gnss_extended_info;
-        gnss_info_short_t gnss_info_short;
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
         float differential_pressure;
