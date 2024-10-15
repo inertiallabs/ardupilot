@@ -41,6 +41,7 @@ extern const AP_HAL::HAL &hal;
 #define IL_GRAVITY_MSS     9.8106f
 
 static const uint64_t dt_critical_msg = 10000; // delay between critical messages to send GCS
+static const uint16_t max_aiding_data_rate = 50; // Maximum Aiding data rate in Hz
 
 // initial array of timestamp of IL INS statuses
 uint64_t IL_usw_last_msg_ms[sizeof(IL_usw_msg) / sizeof(IL_usw_msg[0])] = {0};
@@ -208,6 +209,16 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     // bitmask for what types we get
     Bitmask<256> msg_types;
     uint32_t now_ms = AP_HAL::millis();
+
+    const bool transmit_airspeed = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_TRANSMIT_AIRSPEED);
+    if (transmit_airspeed) {
+        uint16_t points_to_decimate = get_num_points_to_dec(max_aiding_data_rate);
+        if (tx_counter >= points_to_decimate) {
+            make_tx_packet(tx_buffer);
+            tx_counter = 0;
+        }
+        tx_counter++;
+    }
 
     for (uint8_t i=0; i<num_messages; i++) {
         if (message_ofs >= buffer_end) {
@@ -1144,6 +1155,37 @@ void AP_ExternalAHRS_InertialLabs::send_EAHRS_status_report(uint16_t &last_state
         }
     }
     last_state = current_state;
+}
+
+// Transmit airspeed to the IL INS
+void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const
+{
+    uint8_t *tmp_ptr = packet;
+    uint8_t hdr[] = {0xAA, 0x55, 0x01, 0x62}; // 0xAA 0x55 - packet header, 0x01 - packet type, 0x62 - packet ID
+    int16_t new_data;
+    float external_speed;
+
+    uint16_t len_packet = 1/*type*/ + 1/*ID*/ + 2/*lenght*/ + 1/*meas num*/ + 1/*meas list*/ + sizeof(int16_t)/*airspeed*/ + sizeof(uint16_t)/*checksum*/;
+
+    memcpy(tmp_ptr, hdr, sizeof(hdr)); // header
+    tmp_ptr += sizeof(hdr);
+    memcpy(tmp_ptr, &len_packet, sizeof(len_packet));
+    tmp_ptr += sizeof(len_packet);
+    // Air speed , 0x02
+    *tmp_ptr++ = 0x01;
+    *tmp_ptr++ = 0x02;
+    external_speed = floorf(AP::airspeed()->get_raw_airspeed() * 1.94384449f * 100.0f + 0.5f);
+    if (external_speed > 32267.0f)  external_speed = 32267.0f;
+    if (external_speed < -32268.0f) external_speed = -32268.0f;
+    new_data = external_speed;
+    memcpy(tmp_ptr, &new_data, sizeof(new_data));
+    tmp_ptr += sizeof(new_data);
+
+    uint16_t tmp_crc = crc_sum_of_bytes_16(packet + 2, (tmp_ptr - packet) - 2); // -0xAA55
+    memcpy(tmp_ptr, &tmp_crc, sizeof(tmp_crc)); // checksum
+    tmp_ptr += sizeof(tmp_crc);
+
+    uart->write(packet, (tmp_ptr - packet));
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED

@@ -245,6 +245,7 @@ public:
 
     uint16_t buffer_ofs;
     uint8_t buffer[512]; // payload is 218 bytes, full message is 264 bytes
+    uint8_t tx_buffer[64];
 
 private:
     AP_HAL::UARTDriver *uart;
@@ -257,6 +258,7 @@ private:
     bool check_header(const ILabsHeader *h) const;
     uint16_t get_num_points_to_dec(const uint16_t rate) const;
     void send_EAHRS_status_report(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg);
+    void make_tx_packet(uint8_t *packet) const;
 
     // re-sync on header bytes
     void re_sync(void);
@@ -350,6 +352,7 @@ private:
     uint32_t last_gps_ms;
 
     uint16_t log_counter = 0;
+    uint16_t tx_counter = 0;
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED

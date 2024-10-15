@@ -174,11 +174,13 @@ public:
         gnss_is_disabled = disable;
     }
 
+    enum class OPTIONS {
+        VN_UNCOMP_IMU = (1U << 0),
+        ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
+    };
+
 protected:
 
-    enum class OPTIONS {
-        VN_UNCOMP_IMU = 1U << 0,
-    };
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }
 
 private:
