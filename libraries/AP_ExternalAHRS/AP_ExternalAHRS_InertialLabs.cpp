@@ -37,52 +37,6 @@
 
 extern const AP_HAL::HAL &hal;
 
-// unit status bits
-#define ILABS_UNIT_STATUS_ALIGNMENT_FAIL   0x0001
-#define ILABS_UNIT_STATUS_OPERATION_FAIL   0x0002
-#define ILABS_UNIT_STATUS_GYRO_FAIL        0x0004
-#define ILABS_UNIT_STATUS_ACCEL_FAIL       0x0008
-#define ILABS_UNIT_STATUS_MAG_FAIL         0x0010
-#define ILABS_UNIT_STATUS_ELECTRONICS_FAIL 0x0020
-#define ILABS_UNIT_STATUS_GNSS_FAIL        0x0040
-#define ILABS_UNIT_STATUS_RUNTIME_CAL      0x0080
-#define ILABS_UNIT_STATUS_VOLTAGE_LOW      0x0100
-#define ILABS_UNIT_STATUS_VOLTAGE_HIGH     0x0200
-#define ILABS_UNIT_STATUS_X_RATE_HIGH      0x0400
-#define ILABS_UNIT_STATUS_Y_RATE_HIGH      0x0800
-#define ILABS_UNIT_STATUS_Z_RATE_HIGH      0x1000
-#define ILABS_UNIT_STATUS_MAG_FIELD_HIGH   0x2000
-#define ILABS_UNIT_STATUS_TEMP_RANGE_ERR   0x4000
-#define ILABS_UNIT_STATUS_RUNTIME_CAL2     0x8000
-
-// unit status2 bits
-#define ILABS_UNIT_STATUS2_ACCEL_X_HIGH           0x0001
-#define ILABS_UNIT_STATUS2_ACCEL_Y_HIGH           0x0002
-#define ILABS_UNIT_STATUS2_ACCEL_Z_HIGH           0x0004
-#define ILABS_UNIT_STATUS2_BARO_FAIL              0x0008
-#define ILABS_UNIT_STATUS2_DIFF_PRESS_FAIL        0x0010
-#define ILABS_UNIT_STATUS2_MAGCAL_2D_ACT          0x0020
-#define ILABS_UNIT_STATUS2_MAGCAL_3D_ACT          0x0040
-#define ILABS_UNIT_STATUS2_GNSS_FUSION_OFF        0x0080
-#define ILABS_UNIT_STATUS2_DIFF_PRESS_FUSION_OFF  0x0100
-#define ILABS_UNIT_STATUS2_MAG_FUSION_OFF         0x0200
-#define ILABS_UNIT_STATUS2_GNSS_POS_VALID         0x0400
-
-// air data status bits
-#define ILABS_AIRDATA_INIT_FAIL                   0x0001
-#define ILABS_AIRDATA_DIFF_PRESS_INIT_FAIL        0x0002
-#define ILABS_AIRDATA_STATIC_PRESS_FAIL           0x0004
-#define ILABS_AIRDATA_DIFF_PRESS_FAIL             0x0008
-#define ILABS_AIRDATA_STATIC_PRESS_RANGE_ERR      0x0010
-#define ILABS_AIRDATA_DIFF_PRESS_RANGE_ERR        0x0020
-#define ILABS_AIRDATA_PRESS_ALT_FAIL              0x0100
-#define ILABS_AIRDATA_AIRSPEED_FAIL               0x0200
-#define ILABS_AIRDATA_BELOW_THRESHOLD             0x0400
-
-// New GPS indicator
-#define NEW_GNSS_POSITION                          0x0001
-#define NEW_GNSS_VELOCITY                          0x0002
-
 // acceleration due to gravity in m/s/s used in IL INS
 #define IL_GRAVITY_MSS     9.8106f
 
@@ -496,7 +450,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         return false;
     }
 
-    bool filter_ok = (ilab_ins_data.unit_status & ILABS_UNIT_STATUS_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
+    bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
 
     if (filter_ok) {
         // use IL INS attitude data in the ArduPilot algorithm
@@ -511,7 +465,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         last_att_ms = now_ms;
     }
 
-    if (filter_ok && (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_GYRO_FAIL|ILABS_UNIT_STATUS_ACCEL_FAIL)) == 0) {
+    if (filter_ok && (ilab_ins_data.unit_status & (IL_USW::GYRO_FAIL|IL_USW::ACCEL_FAIL)) == 0) {
         // use IL INS IMU outputs in the ArduPilot algorithm instead of EKF3 or DCM
         ins_data.accel = ilab_sensors_data.accel;
         ins_data.gyro = ilab_sensors_data.gyro;
@@ -520,7 +474,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         state.gyro = ins_data.gyro;
     }
 
-    bool hasNewGpsData = (ilab_gps_data.new_data & (NEW_GNSS_POSITION|NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
+    bool hasNewGpsData = (ilab_gps_data.new_data & (IL_NEWGPS::NEW_GNSS_POSITION|IL_NEWGPS::NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
 
     if (filter_ok) {
         state.location.lat = ilab_ins_data.latitude;
@@ -570,7 +524,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     }
 
 #if AP_BARO_EXTERNALAHRS_ENABLED
-    if ((ilab_ins_data.unit_status2 & ILABS_UNIT_STATUS2_BARO_FAIL) == 0) {
+    if ((ilab_ins_data.unit_status2 & IL_USW2::ADU_BARO_FAIL) == 0) {
         baro_data.pressure_pa = ilab_sensors_data.pressure;
         baro_data.temperature = ilab_sensors_data.temperature;
         AP::baro().handle_external(baro_data);
@@ -579,7 +533,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 #endif
 
 #if AP_COMPASS_EXTERNALAHRS_ENABLED
-    if ((ilab_ins_data.unit_status & ILABS_UNIT_STATUS_MAG_FAIL) == 0) {
+    if ((ilab_ins_data.unit_status & IL_USW::MAG_FAIL) == 0) {
         mag_data.field = ilab_sensors_data.mag;
         AP::compass().handle_external(mag_data);
     }
@@ -587,7 +541,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED && (APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_ArduPlane))
     // only on plane and copter as others do not link AP_Airspeed
-    if ((ilab_ins_data.unit_status2 & ILABS_UNIT_STATUS2_DIFF_PRESS_FAIL) == 0) {
+    if ((ilab_ins_data.unit_status2 & IL_USW2::ADU_DIFF_PRESS_FAIL) == 0) {
         airspeed_data.differential_pressure = ilab_sensors_data.diff_press;
         airspeed_data.temperature = ilab_sensors_data.temperature;
         auto *arsp = AP::airspeed();
@@ -974,7 +928,7 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
     const uint32_t dt_limit_gps = 500;
     memset(&status, 0, sizeof(status));
 
-    const bool init_ok = (ilab_ins_data.unit_status & (ILABS_UNIT_STATUS_ALIGNMENT_FAIL|ILABS_UNIT_STATUS_OPERATION_FAIL)) == 0;
+    const bool init_ok = (ilab_ins_data.unit_status & (IL_USW::INITIAL_ALIGNMENT_FAIL|IL_USW::OPERATION_FAIL)) == 0;
 
     status.flags.initalized = init_ok;
 

@@ -23,6 +23,7 @@
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
 #include "AP_ExternalAHRS_backend.h"
+#include "AP_ExternalAHRS_InertialLabs_message_list.h"
 
 class AP_ExternalAHRS_InertialLabs : public AP_ExternalAHRS_backend {
 
@@ -254,7 +255,7 @@ private:
     void update_thread();
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
-    uint16_t get_num_points_to_dec(const uint16_t rate) const; // get number of points to downsampling
+    uint16_t get_num_points_to_dec(const uint16_t rate) const;
 
     // re-sync on header bytes
     void re_sync(void);
