@@ -52,6 +52,7 @@ protected:
     AP_ExternalAHRS::state_t &state;
     uint16_t get_rate(void) const;
     bool option_is_set(AP_ExternalAHRS::OPTIONS option) const;
+    uint16_t get_eahrs_log_rate(void) const;
 
     // set default of EAHRS_SENSORS
     void set_default_sensors(uint16_t sensors) {

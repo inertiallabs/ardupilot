@@ -72,6 +72,11 @@ public:
         return rate.get();
     }
 
+    // get rate in Hz to log external AHRS data
+    float get_log_rate(void) const {
+        return log_rate.get();
+    }
+
     // Get model/type name
     const char* get_name() const;
 
