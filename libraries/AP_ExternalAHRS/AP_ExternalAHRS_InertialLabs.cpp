@@ -209,7 +209,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     uint32_t now_ms = AP_HAL::millis();
 
     if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_trans_diff_pressure)) { //AVK 15.05.2024
-        make_tx_packet(tx_buffer);
         uint16_t points_to_decimate = get_num_points_to_dec(aiding_data_rate);
         if (counter >= points_to_decimate) {
             make_tx_packet(tx_buffer);
