@@ -393,6 +393,30 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             state2.unit_status2 = u.unit_status2;
             break;
         }
+        case MessageType::GNSS_DOP: {
+            CHECK_SIZE(u.gnss_dop);
+            state3.gnss_dop.gdop = u.gnss_dop.gdop * 1.0e-3f;
+            state3.gnss_dop.pdop = u.gnss_dop.pdop * 1.0e-3f;
+            state3.gnss_dop.hdop = u.gnss_dop.hdop * 1.0e-3f;
+            state3.gnss_dop.vdop = u.gnss_dop.vdop * 1.0e-3f;
+            state3.gnss_dop.tdop = u.gnss_dop.tdop * 1.0e-3f;
+            break;
+        }
+        case MessageType::INS_SOLUTION_STATUS: {
+            CHECK_SIZE(u.ins_sol_status);
+            state3.ins_sol_status = u.ins_sol_status;
+            break;
+        }
+        case MessageType::INS_POS_VEL_ACCURACY: {
+            CHECK_SIZE(u.ins_accuracy);
+            state3.ins_accuracy.lat = u.ins_accuracy.lat * 1.0e-3f;
+            state3.ins_accuracy.lon = u.ins_accuracy.lon * 1.0e-3f;
+            state3.ins_accuracy.alt = u.ins_accuracy.alt * 1.0e-3f;
+            state3.ins_accuracy.east_vel = u.ins_accuracy.east_vel * 1.0e-3f;
+            state3.ins_accuracy.north_vel = u.ins_accuracy.north_vel * 1.0e-3f;
+            state3.ins_accuracy.ver_vel = u.ins_accuracy.ver_vel * 1.0e-3f;
+            break;
+        }
         case MessageType::FULL_SAT_INFO: {
             CHECK_SIZE(u.full_sat_info);
             state2.full_sat_info.SVs = u.full_sat_info.SVs;
@@ -405,6 +429,56 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             state2.full_sat_info.ext_sol_status = u.full_sat_info.ext_sol_status;
 
             gps_data.satellites_in_view = state2.full_sat_info.SolnSVs;
+            break;
+        }
+        case MessageType::GNSS_VEL_LATENCY: {
+            CHECK_SIZE(u.gnss_vel_latency);
+            state3.gnss_vel_latency = u.gnss_vel_latency;
+            break;
+        }
+        case MessageType::GNSS_SOL_STATUS: {
+            CHECK_SIZE(u.gnss_sol_status);
+            state3.gnss_sol_status = u.gnss_sol_status;
+            break;
+        }
+        case MessageType::NEW_AIDING_DATA: {
+            CHECK_SIZE(u.new_aiding_data);
+            state3.new_aiding_data = u.new_aiding_data;
+            break;
+        }
+        case MessageType::NEW_AIDING_DATA2: {
+            CHECK_SIZE(u.new_aiding_data2);
+            state3.new_aiding_data2 = u.new_aiding_data2;
+            break;
+        }
+        case MessageType::EXT_SPEED: {
+            CHECK_SIZE(u.external_speed);
+            state3.external_speed = u.external_speed;
+            break;
+        }
+        case MessageType::EXT_HOR_POS: {
+            CHECK_SIZE(u.ext_hor_pos);
+            state3.ext_hor_pos = u.ext_hor_pos;
+            break;
+        }
+        case MessageType::EXT_ALT: {
+            CHECK_SIZE(u.ext_alt);
+            state3.ext_alt = u.ext_alt;
+            break;
+        }
+        case MessageType::EXT_HEADING: {
+            CHECK_SIZE(u.ext_heading);
+            state3.ext_heading = u.ext_heading;
+            break;
+        }
+        case MessageType::EXT_AMBIENT_DATA: {
+            CHECK_SIZE(u.ext_ambient_air_data);
+            state3.ext_ambient_air_data = u.ext_ambient_air_data;
+            break;
+        }
+        case MessageType::EXT_WIND_DATA: {
+            CHECK_SIZE(u.ext_wind_data);
+            state3.ext_wind_data = u.ext_wind_data;
             break;
         }
         }
