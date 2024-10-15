@@ -177,6 +177,7 @@ public:
     enum class OPTIONS {
         VN_UNCOMP_IMU = (1U << 0),
         ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
+        ILAB_SEND_STATUS = (1U << 2), // send IL INS status messages to GCS
     };
 
 protected:
