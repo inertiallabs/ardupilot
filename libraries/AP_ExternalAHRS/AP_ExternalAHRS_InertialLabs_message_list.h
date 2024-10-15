@@ -115,7 +115,7 @@ const ILStatusMessage IL_usw_msg[] = {
 	{ GYRO_Y_RATE_HIGH,       MAV_SEVERITY_WARNING,  "X-axis angular rate is exceeded",       "X-axis angular rate is in range"  },
 	{ GYRO_Z_RATE_HIGH,       MAV_SEVERITY_WARNING,  "Z-axis angular rate is exceeded",       "Z-axis angular rate is in range"  },
 	{ MAG_FIELD_HIGH,         MAV_SEVERITY_WARNING,  "Large total magnetic field",            "Total magnetic field is in range" },
-	{ TEMP_RANGE_ERR,         MAV_SEVERITY_WARNING,  "Temperature is out of range",           "Temperature is in range"          },
+	{ TEMP_RANGE_ERR,         MAV_SEVERITY_WARNING,  "Temperature is out of range",           "Temperature is in range"          }
 };
 
 const ILStatusMessage IL_usw2_msg[] = {

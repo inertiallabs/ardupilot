@@ -256,6 +256,7 @@ private:
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
     uint16_t get_num_points_to_dec(const uint16_t rate) const;
+    void send_EAHRS_status_report(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg);
 
     // re-sync on header bytes
     void re_sync(void);
@@ -332,6 +333,16 @@ private:
 
     ILAB_SENSORS_DATA ilab_sensors_data_avr;
     ILAB_INS_DATA ilab_ins_data_avr;
+
+   struct {
+        uint16_t unit_status;
+        uint16_t unit_status2;
+        uint16_t air_data_status;
+        uint8_t spoof_status;
+        uint8_t jam_status;
+        uint8_t ins_sol_status;
+        uint8_t mag_clb_status;
+    } last_ins_status;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
