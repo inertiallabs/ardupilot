@@ -71,7 +71,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Transmit airspeed to IL INS,2:Send IL INS status messages to GCS
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Transmit airspeed to IL INS,2:Send IL INS status messages to GCS,3:Use IL INS wind estimation
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 
@@ -282,6 +282,15 @@ void AP_ExternalAHRS::send_status_report(GCS_MAVLINK &link) const
     if (backend) {
         backend->send_status_report(link);
     }
+}
+
+// Use External AHRS estimated wind speed in ArduPilot subsystems
+bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const
+{
+    if (backend) {
+        return backend->get_wind_estimation(wind);
+    }
+    return false;
 }
 
 void AP_ExternalAHRS::update(void)
