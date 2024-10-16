@@ -22,6 +22,8 @@
 
 #if HAL_EXTERNAL_AHRS_ENABLED
 
+#include "AP_ExternalAHRS_command_context.h"
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/Location.h>
@@ -123,8 +125,9 @@ public:
     bool get_gyro(Vector3f &gyro);
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
-    bool get_estimate_wind(Vector3f &wind) const;
     void write_bytes(const char *bytes, uint8_t len);
+    void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
+    bool get_estimate_wind(Vector3f &wind) const;
 
     // update backend
     void update();
