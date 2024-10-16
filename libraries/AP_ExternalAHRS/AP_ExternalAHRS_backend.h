@@ -42,6 +42,7 @@ public:
     virtual bool pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const = 0;
     virtual void get_filter_status(nav_filter_status &status) const {}
     virtual bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const { return false; }
+    virtual bool get_wind_estimation(Vector3f &wind) { return false; }
 
     // Check for new data.
     // This is used when there's not a separate thread for EAHRS.
@@ -80,10 +81,9 @@ protected:
     const float vel_gate_scale = 0.2;
     const float pos_gate_scale = 0.2;
     const float hgt_gate_scale = 0.2;
-    
+
 private:
     AP_ExternalAHRS &frontend;
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
-

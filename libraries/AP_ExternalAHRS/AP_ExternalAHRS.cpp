@@ -375,6 +375,15 @@ void AP_ExternalAHRS::send_status_report(GCS_MAVLINK &link) const
                                        mag_var, 0, 0);
 }
 
+// Use External AHRS estimated wind speed in ArduPilot subsystems
+bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const
+{
+    if (backend) {
+        return backend->get_wind_estimation(wind);
+    }
+    return false;
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {

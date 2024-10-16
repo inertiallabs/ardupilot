@@ -126,6 +126,7 @@ public:
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const;
+    bool get_estimate_wind(Vector3f &wind) const;
 
     // update backend
     void update();
@@ -178,9 +179,9 @@ public:
     }
 
     enum class OPTIONS {
-        VN_UNCOMP_IMU = (1U << 0),
+        VN_UNCOMP_IMU          = (1U << 0),
         ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
-        ILAB_SEND_STATUS = (1U << 2), // send IL INS status messages to GCS
+        ILAB_SEND_STATUS       = (1U << 2), // send IL INS status messages to GCS
     };
 
 protected:
@@ -219,4 +220,3 @@ namespace AP {
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
-
