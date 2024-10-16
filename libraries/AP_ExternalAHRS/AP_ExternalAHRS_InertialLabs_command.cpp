@@ -33,6 +33,9 @@ bool fill_command_pyload(Data_context & context,
     // Start payload from 7th byte
     context.data[6] = 0x01;
 
+    const float epsilon = 1e-5f;
+    uint16_t max_value = (1 << 16) - 1;
+
     switch (command) {
         case ExternalAHRS_command::AIDING_DATA_EXTERNAL_POSITION:
             context.data[7] = 0x04;
@@ -40,11 +43,20 @@ bool fill_command_pyload(Data_context & context,
                 AidingData::External_position *d = (AidingData::External_position *) &context.data[8];
                 d->latitude = data.x;
                 d->longitude = data.y;
-                d->altitude = static_cast<int32_t>(data.z * 1e3);
-                d->latitudeStd = static_cast<int16_t>(data.param2 * 1e2);
-                d->longitudeStd = static_cast<int16_t>(data.param3 * 1e2);
-                d->altitudeStd = static_cast<int16_t>(data.param4 * 1e2);
-                d->latency = static_cast<int16_t>(data.param1 * 1e3);
+                d->altitude = static_cast<int32_t>(data.z * 1.0e3f);
+                if ((fabsf(data.param2) < epsilon) && (fabsf(data.param3) < epsilon)) {
+                    d->latitudeStd = max_value;
+                    d->longitudeStd = max_value;
+                } else {
+                    d->latitudeStd = static_cast<uint16_t>(data.param2 * 100.0f);
+                    d->longitudeStd = static_cast<uint16_t>(data.param3 * 100.0f);
+                }
+                if (fabsf(data.param4) < epsilon) {
+                    d->altitudeStd = max_value;
+                } else {
+                    d->altitudeStd = static_cast<uint16_t>(data.param4 * 100.0f);
+                }
+                d->latency = static_cast<uint16_t>(data.param1 * 1.0e3f);
             }
             context.length += sizeof(AidingData::External_position);
             return true;
@@ -55,9 +67,14 @@ bool fill_command_pyload(Data_context & context,
                 AidingData::External_horizontal_position *d = (AidingData::External_horizontal_position *) &context.data[8];
                 d->latitude = data.x;
                 d->longitude = data.y;
-                d->latitudeStd = static_cast<int16_t>(data.param1 * 1e2);
-                d->longitudeStd = static_cast<int16_t>(data.param2 * 1e2);
-                d->latency = static_cast<int16_t>(data.param3 * 1e3);
+                if ((fabsf(data.param1) < epsilon) && (fabsf(data.param2) < epsilon)) {
+                    d->latitudeStd = max_value;
+                    d->longitudeStd = max_value;
+                } else {
+                    d->latitudeStd = static_cast<uint16_t>(data.param1 * 100.0f);
+                    d->longitudeStd = static_cast<uint16_t>(data.param2 * 100.0f);
+                }
+                d->latency = static_cast<uint16_t>(data.param3 * 1.0e3f);
             }
             context.length += sizeof(AidingData::External_horizontal_position);
             return true;
@@ -66,8 +83,12 @@ bool fill_command_pyload(Data_context & context,
             context.data[7] = 0x0C;
             {
                 AidingData::External_altitude *d = (AidingData::External_altitude *) &context.data[8];
-                d->altitude = static_cast<int32_t>(data.z * 1e3);
-                d->altitudeStd = static_cast<int16_t>(data.param1 * 1e2);
+                d->altitude = static_cast<int32_t>(data.z * 1.0e3f);
+                if (fabsf(data.param1) < epsilon) {
+                    d->altitudeStd = max_value;
+                } else {
+                    d->altitudeStd = static_cast<uint16_t>(data.param1 * 100.0f);
+                }
             }
             context.length += sizeof(AidingData::External_altitude);
             return true;
@@ -80,18 +101,18 @@ bool fill_command_pyload(Data_context & context,
                 const float speedStd = data.param3;
 
                 // Speed in m/s
-                const float NWind = speed * cosf(direction * M_PI / 180);
-                const float EWind = speed * sinf(direction * M_PI / 180);
+                const float NWind = speed * cosf(direction * M_PI / 180.0f);
+                const float EWind = speed * sinf(direction * M_PI / 180.0f);
                 const float NWindStd = speedStd; //< as designed
                 const float EWindStd = speedStd; //< as designed
 
                 // Speed from m/s to kt
-                const float m_per_s_to_kt = 1.943844;
+                const float m_per_s_to_kt = 1.943844f;
                 AidingData::Wind *d = (AidingData::Wind *) &context.data[8];
-                d->north = static_cast<int16_t>(NWind * m_per_s_to_kt * 1e2);
-                d->east = static_cast<int16_t>(EWind * m_per_s_to_kt * 1e2);
-                d->northStd = static_cast<int16_t>(NWindStd * m_per_s_to_kt * 1e2);
-                d->eastStd = static_cast<int16_t>(EWindStd * m_per_s_to_kt * 1e2);
+                d->north = static_cast<int16_t>(NWind * m_per_s_to_kt * 100.0f);
+                d->east = static_cast<int16_t>(EWind * m_per_s_to_kt * 100.0f);
+                d->northStd = static_cast<uint16_t>(NWindStd * m_per_s_to_kt * 100.0f);
+                d->eastStd = static_cast<uint16_t>(EWindStd * m_per_s_to_kt * 100.0f);
             }
             context.length += sizeof(AidingData::Wind);
             return true;
@@ -100,9 +121,9 @@ bool fill_command_pyload(Data_context & context,
             context.data[7] = 0x0B;
             {
                 AidingData::Ambient_air *d = (AidingData::Ambient_air *) &context.data[8];
-                d->temperature = static_cast<int16_t>(data.param1 * 10);
-                d->altitude = static_cast<int32_t>(data.z * 1e2);
-                d->pressure = static_cast<int16_t>(data.param2 / 2);
+                d->temperature = static_cast<int16_t>(data.param1 * 10.0f);
+                d->altitude = static_cast<int32_t>(data.z * 100.0f);
+                d->pressure = static_cast<uint16_t>(data.param2 * 0.5f);
             }
             context.length += sizeof(AidingData::Ambient_air);
             return true;
@@ -111,9 +132,13 @@ bool fill_command_pyload(Data_context & context,
             context.data[7] = 0x06;
             {
                 AidingData::External_heading *d = (AidingData::External_heading *) &context.data[8];
-                d->heading = static_cast<int16_t>(data.param1 * 1e2);
-                d->headingStd = static_cast<int16_t>(data.param2 * 1e2);
-                d->latency = static_cast<int16_t>(data.param3 * 1e3);
+                d->heading = static_cast<uint16_t>(data.param1 * 100.0f);
+                if (fabsf(data.param2) < epsilon) {
+                    d->headingStd = max_value;
+                } else {
+                    d->headingStd = static_cast<uint16_t>(data.param2 * 100.0f);
+                }
+                d->latency = static_cast<uint16_t>(data.param3 * 1.0e3f);
             }
             context.length += sizeof(AidingData::External_heading);
             return true;
