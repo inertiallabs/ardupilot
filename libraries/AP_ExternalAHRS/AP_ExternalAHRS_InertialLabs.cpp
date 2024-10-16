@@ -508,6 +508,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         last_vel_ms = now_ms;
         last_pos_ms = now_ms;
 
+        gps_data.ins_lat_accuracy = static_cast<uint32_t>(ilab_ins_data.ins_accuracy.lat);
+        gps_data.ins_lng_accuracy = static_cast<uint32_t>(ilab_ins_data.ins_accuracy.lon);
+        gps_data.ins_alt_accuracy = static_cast<uint32_t>(ilab_ins_data.ins_accuracy.alt);
+
         if (hasNewGpsData) {
             // use IL INS navigation solution instead of GNSS solution
             gps_data.ms_tow = ilab_ins_data.ms_tow;
@@ -521,6 +525,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             gps_data.hdop = static_cast<float>(ilab_gps_data.dop.hdop)*0.1f;
             gps_data.vdop = static_cast<float>(ilab_gps_data.dop.vdop)*0.1f;
             gps_data.fix_type = ilab_gps_data.fix_type+1;
+
+            gps_data.latitude_raw = ilab_gps_data.latitude;
+            gps_data.longitude_raw = ilab_gps_data.longitude;
+            gps_data.altitude_raw = ilab_gps_data.altitude;
+            gps_data.track_over_ground_raw = ilab_gps_data.track_over_ground;
+            gps_data.gps_raw_status = ilab_gps_data.gnss_sol_status;
 
             uint8_t instance;
             if (AP::gps().get_first_external_instance(instance)) {
