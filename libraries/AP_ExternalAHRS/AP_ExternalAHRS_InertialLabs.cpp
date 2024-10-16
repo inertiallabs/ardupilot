@@ -807,18 +807,18 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Description: InertialLabs AHRS data7
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
-        // @Field: eLat: Latitude external
-        // @Field: eLng: Longitude external
-        // @Field: eAlt: Altitude external
-        // @Field: eLatS: Latitude external STD
-        // @Field: eLngS: Longitude external STD
-        // @Field: eAltS: Altitude external STD
-        // @Field: ePosL: External position latency
-        // @Field: eYaw: Heading external
-        // @Field: eYawS: Heading external STD
-        // @Field: eYawL: Heading external latency
+        // @Field: Lat: Latitude external
+        // @Field: Lng: Longitude external
+        // @Field: Alt: Altitude external
+        // @Field: LatS: Latitude external STD
+        // @Field: LngS: Longitude external STD
+        // @Field: AltS: Altitude external STD
+        // @Field: PosL: External position latency
+        // @Field: Yaw: Heading external
+        // @Field: YawS: Heading external STD
+        // @Field: YawL: Heading external latency
 
-        AP::logger().WriteStreaming("ILB7", "TimeUS,IMS,eLat,eLng,eAlt,eLatS,eLngS,eAltS,ePosL,eYaw,eYawS,eYawL",
+        AP::logger().WriteStreaming("ILB7", "TimeUS,IMS,Lat,Lng,Alt,LatS,LngS,AltS,PosL,Yaw,YawS,YawL",
                                     "s-DUmmmm-hh-",
                                     "F-----------",
                                     "QIffffffffff",
@@ -842,16 +842,16 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Description: InertialLabs AHRS data8
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
-        // @Field: eSpd: External air or ground speed
-        // @Field: eTemp: External temperature
-        // @Field: eAlt: External altitude
-        // @Field: ePress: External pressure
-        // @Field: eWN: External North wind component
-        // @Field: eWE: External East wind component
-        // @Field: eWNS: External North wind STD
-        // @Field: eWES: External East wind component
+        // @Field: Spd: External air or ground speed
+        // @Field: Temp: External temperature
+        // @Field: Alt: External altitude
+        // @Field: Press: External pressure
+        // @Field: WN: External North wind component
+        // @Field: WE: External East wind component
+        // @Field: WNS: External North wind STD
+        // @Field: WES: External East wind component
 
-        AP::logger().WriteStreaming("ILB8", "TimeUS,IMS,eSpd,eTemp,eAlt,ePress,eWN,eWE,eWNS,eWES",
+        AP::logger().WriteStreaming("ILB8", "TimeUS,IMS,Spd,Temp,Alt,Press,WN,WE,WNS,WES",
                                     "s-nOmPnnnn",
                                     "F---------",
                                     "QIffffffff",
