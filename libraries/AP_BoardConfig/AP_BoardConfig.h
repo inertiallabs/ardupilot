@@ -316,7 +316,7 @@ private:
     AP_Int8 _sdcard_slowdown;
 #endif
 
-    AP_Int16 _boot_delay_ms;
+    AP_Int32 _boot_delay_ms; // Increased by 2 bytes for InertialLabs INS initialization
 
     AP_Int32 _options;
 

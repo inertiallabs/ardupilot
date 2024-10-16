@@ -296,7 +296,7 @@ const AP_Param::GroupInfo AP_BoardConfig::var_info[] = {
     // @Param: BOOT_DELAY
     // @DisplayName: Boot delay
     // @Description: This adds a delay in milliseconds to boot to ensure peripherals initialise fully
-    // @Range: 0 10000
+    // @Range: 0 60000
     // @Units: ms
     // @User: Advanced
     AP_GROUPINFO("BOOT_DELAY", 20, AP_BoardConfig, _boot_delay_ms, HAL_DEFAULT_BOOT_DELAY),
@@ -393,7 +393,7 @@ void AP_BoardConfig::init()
 #endif
 
     if (_boot_delay_ms > 0) {
-        uint16_t delay_ms = uint16_t(_boot_delay_ms.get());
+        uint32_t delay_ms = uint32_t(_boot_delay_ms.get());
         if (hal.util->was_watchdog_armed() && delay_ms > 200) {
             // don't delay a long time on watchdog reset, the pilot
             // may be able to save the vehicle
