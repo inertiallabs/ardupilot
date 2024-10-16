@@ -43,6 +43,7 @@ public:
     virtual void get_filter_status(nav_filter_status &status) const {}
     virtual void send_status_report(class GCS_MAVLINK &link) const {}
     virtual bool get_wind_estimation(Vector3f &wind) { return false; }
+    virtual void write_bytes(const char *bytes, uint8_t len) {};
 
     // Check for new data.
     // This is used when there's not a separate thread for EAHRS.

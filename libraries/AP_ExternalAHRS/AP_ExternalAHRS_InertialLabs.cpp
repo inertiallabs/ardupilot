@@ -1203,5 +1203,11 @@ bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
     return false;
 }
 
+// Transmit data to IL INS
+void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
+{
+    uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
+}
+
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
