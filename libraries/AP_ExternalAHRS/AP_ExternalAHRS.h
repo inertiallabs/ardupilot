@@ -123,6 +123,7 @@ public:
     bool get_gyro(Vector3f &gyro);
     bool get_accel(Vector3f &accel);
     void send_status_report(class GCS_MAVLINK &link) const;
+    bool get_estimate_wind(Vector3f &wind) const;
 
     // update backend
     void update();
@@ -175,9 +176,10 @@ public:
     }
 
     enum class OPTIONS {
-        VN_UNCOMP_IMU = (1U << 0),
+        VN_UNCOMP_IMU          = (1U << 0),
         ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
-        ILAB_SEND_STATUS = (1U << 2), // send IL INS status messages to GCS
+        ILAB_SEND_STATUS       = (1U << 2), // send IL INS status messages to GCS
+        ILAB_USE_WIND_EST      = (1U << 3), // use IL INS estimated wind speed in ArduPilot subsystems
     };
 
 protected:
