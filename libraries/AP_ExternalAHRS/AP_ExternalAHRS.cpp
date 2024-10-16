@@ -293,6 +293,14 @@ bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const
     return false;
 }
 
+// Transmit data to External AHRS
+void AP_ExternalAHRS::write_bytes(const char *bytes, uint8_t len)
+{
+    if (backend) {
+        backend->write_bytes(bytes, len);
+    }
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {
