@@ -515,8 +515,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         if (hasNewGpsData) {
             // use IL INS navigation solution instead of GNSS solution
             gps_data.ms_tow = ilab_ins_data.ms_tow;
-            gps_data.longitude = ilab_ins_data.latitude;
-            gps_data.latitude = ilab_ins_data.longitude;
+            gps_data.latitude = ilab_ins_data.latitude;
+            gps_data.longitude = ilab_ins_data.longitude;
             gps_data.msl_altitude = ilab_ins_data.altitude;
             gps_data.ned_vel_north = ilab_ins_data.velocity.x;
             gps_data.ned_vel_east = ilab_ins_data.velocity.y;
