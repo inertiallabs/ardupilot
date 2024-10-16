@@ -40,6 +40,7 @@ public:
     void get_filter_status(nav_filter_status &status) const override;
     void send_status_report(class GCS_MAVLINK &link) const override;
     void write_bytes(const char *bytes, uint8_t len) override;
+    void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) override;
     bool get_wind_estimation(Vector3f &wind) override;
 
     // check for new data
