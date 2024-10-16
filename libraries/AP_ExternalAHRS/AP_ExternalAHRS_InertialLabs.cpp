@@ -21,6 +21,7 @@
 #if AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
 
 #include "AP_ExternalAHRS_InertialLabs.h"
+#include "AP_ExternalAHRS_InertialLabs_command.h"
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
 #include <AP_Baro/AP_Baro.h>
@@ -1207,6 +1208,53 @@ bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
 void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
 {
     uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
+}
+
+void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
+{
+    switch (command) {
+        case ExternalAHRS_command::START_UDD:
+            write_bytes(InertialLabs::Command::START_UDD,
+                        sizeof(InertialLabs::Command::START_UDD) - 1);
+            break;
+        case ExternalAHRS_command::STOP:
+            write_bytes(InertialLabs::Command::STOP,
+                        sizeof(InertialLabs::Command::STOP) - 1);
+            break;
+        case ExternalAHRS_command::ENABLE_GNSS:
+            write_bytes(InertialLabs::Command::ENABLE_GNSS,
+                        sizeof(InertialLabs::Command::ENABLE_GNSS) - 1);
+            break;
+        case ExternalAHRS_command::DISABLE_GNSS:
+            write_bytes(InertialLabs::Command::DISABLE_GNSS,
+                        sizeof(InertialLabs::Command::DISABLE_GNSS) - 1);
+            break;
+        case ExternalAHRS_command::START_VG3D_CALIBRATION_IN_FLIGHT:
+            write_bytes(InertialLabs::Command::START_VG3DCLB_FLIGHT,
+                        sizeof(InertialLabs::Command::START_VG3DCLB_FLIGHT) - 1);
+            break;
+        case ExternalAHRS_command::STOP_VG3D_CALIBRATION_IN_FLIGHT:
+            write_bytes(InertialLabs::Command::STOP_VG3DCLB_FLIGHT,
+                        sizeof(InertialLabs::Command::STOP_VG3DCLB_FLIGHT) - 1);
+            break;
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_POSITION:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_ALTITUDE:
+        case ExternalAHRS_command::AIDING_DATA_WIND:
+        case ExternalAHRS_command::AIDING_DATA_AMBIENT_AIR:
+        case ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING:
+        {
+            InertialLabs::Data_context context;
+            InertialLabs::fill_command_pyload(context, command, data);
+            InertialLabs::fill_transport_protocol_data(context);
+            AP::externalAHRS().write_bytes(reinterpret_cast<const char *>(context.data), context.length);
+            break;
+        }
+
+        default:
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: Invalid command for handling");
+    }
+
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED

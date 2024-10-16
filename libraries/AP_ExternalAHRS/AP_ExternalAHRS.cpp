@@ -284,6 +284,21 @@ void AP_ExternalAHRS::send_status_report(GCS_MAVLINK &link) const
     }
 }
 
+// Transmit data to External AHRS
+void AP_ExternalAHRS::write_bytes(const char *bytes, uint8_t len)
+{
+    if (backend) {
+        backend->write_bytes(bytes, len);
+    }
+}
+
+void AP_ExternalAHRS::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
+{
+    if (backend) {
+        backend->handle_command(command, data);
+    }
+}
+
 // Use External AHRS estimated wind speed in ArduPilot subsystems
 bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const
 {
@@ -291,14 +306,6 @@ bool AP_ExternalAHRS::get_estimate_wind(Vector3f &wind) const
         return backend->get_wind_estimation(wind);
     }
     return false;
-}
-
-// Transmit data to External AHRS
-void AP_ExternalAHRS::write_bytes(const char *bytes, uint8_t len)
-{
-    if (backend) {
-        backend->write_bytes(bytes, len);
-    }
 }
 
 void AP_ExternalAHRS::update(void)
