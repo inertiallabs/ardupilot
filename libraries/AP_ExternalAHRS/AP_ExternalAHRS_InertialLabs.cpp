@@ -601,13 +601,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     ilab_ins_data_avr.pitch += ilab_ins_data.pitch;
     ilab_ins_data_avr.roll += ilab_ins_data.roll;
 
-    ilab_ins_data_avr.latitude += ilab_ins_data_avr.latitude;
-    ilab_ins_data_avr.longitude += ilab_ins_data_avr.longitude;
-    ilab_ins_data_avr.altitude += ilab_ins_data_avr.altitude;
-    ilab_ins_data_avr.velocity += ilab_ins_data_avr.velocity;
-    ilab_ins_data_avr.unit_status |= ilab_ins_data_avr.unit_status;
-    ilab_ins_data_avr.unit_status2 |= ilab_ins_data_avr.unit_status2;
-    ilab_ins_data_avr.ins_sol_status |= ilab_ins_data_avr.ins_sol_status;
+    ilab_ins_data_avr.latitude += ilab_ins_data.latitude;
+    ilab_ins_data_avr.longitude += ilab_ins_data.longitude;
+    ilab_ins_data_avr.altitude += ilab_ins_data.altitude;
+    ilab_ins_data_avr.velocity += ilab_ins_data.velocity;
+    ilab_ins_data_avr.unit_status |= ilab_ins_data.unit_status;
+    ilab_ins_data_avr.unit_status2 |= ilab_ins_data.unit_status2;
+    ilab_ins_data_avr.ins_sol_status |= ilab_ins_data.ins_sol_status;
 
     ilab_ins_data_avr.baro_alt += ilab_ins_data.baro_alt;
     ilab_ins_data_avr.true_airspeed += ilab_ins_data.true_airspeed;
