@@ -44,6 +44,7 @@ public:
     virtual bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const { return false; }
     virtual bool get_wind_estimation(Vector3f &wind) { return false; }
     virtual void write_bytes(const char *bytes, uint8_t len) {};
+    virtual void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) {};
 
     // Check for new data.
     // This is used when there's not a separate thread for EAHRS.
