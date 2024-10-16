@@ -259,6 +259,7 @@ private:
     uint16_t get_num_points_to_dec(const uint16_t rate) const;
     void send_EAHRS_status_report(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg);
     void make_tx_packet(uint8_t *packet) const;
+    bool get_wind_estimation(Vector3f &wind) override;
 
     // re-sync on header bytes
     void re_sync(void);
