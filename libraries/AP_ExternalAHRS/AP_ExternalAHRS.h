@@ -188,11 +188,16 @@ public:
     }
 
     enum class OPTIONS {
-        VN_UNCOMP_IMU          = (1U << 0),
-        ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
-        ILAB_SEND_STATUS       = (1U << 2), // send IL INS status messages to GCS
-        ILAB_USE_WIND_EST      = (1U << 3), // use IL INS estimated wind speed in ArduPilot subsystems
+        VN_UNCOMP_IMU           = (1U << 0),
+        ILAB_TRANSMIT_AIRSPEED  = (1U << 1), // transmit airspeed to IL INS
+        ILAB_SEND_STATUS        = (1U << 2), // send IL INS status messages to GCS
+        ILAB_USE_WIND_EST       = (1U << 3), // use IL INS estimated wind speed in ArduPilot subsystems
+        ILAB_TRANSMIT_GPS_INPUT = (1U << 4), // transmit GPS_INPUT [232] MAVLink message to IL INS
     };
+
+    bool check_eahrs_option(OPTIONS option) const {
+        return option_is_set(option);
+    }
 
 protected:
 
