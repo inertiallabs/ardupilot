@@ -22,6 +22,8 @@
 
 #if HAL_EXTERNAL_AHRS_ENABLED
 
+#include "AP_ExternalAHRS_command_context.h"
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/Location.h>
@@ -128,6 +130,7 @@ public:
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const;
     bool get_estimate_wind(Vector3f &wind) const;
     void write_bytes(const char *bytes, uint8_t len);
+    void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
 
     // update backend
     void update();
