@@ -127,6 +127,7 @@ public:
     void send_status_report(class GCS_MAVLINK &link) const;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const;
     bool get_estimate_wind(Vector3f &wind) const;
+    void write_bytes(const char *bytes, uint8_t len);
 
     // update backend
     void update();
