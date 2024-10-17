@@ -210,6 +210,11 @@ public:
         uint16_t unit_status; // set ILABS_UNIT_STATUS_*
         gnss_extended_info_t gnss_extended_info;
         struct PACKED {
+            int32_t lat; // deg*1e7
+            int32_t lon; // deg*1e7
+            int32_t alt; // m*100
+        } gnss_position;
+        struct PACKED {
             int32_t hor_speed; // m/s*100
             uint16_t track_over_ground; // deg*100
             int32_t ver_speed; // m/s*100
@@ -359,4 +364,3 @@ private:
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
-

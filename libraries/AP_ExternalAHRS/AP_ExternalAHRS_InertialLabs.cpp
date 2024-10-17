@@ -84,7 +84,7 @@ void AP_ExternalAHRS_InertialLabs::re_sync(void)
           look for the 2 byte header and try to sync to that
          */
         const uint16_t header = 0x55AA;
-        const uint8_t *p = (const uint8_t *)memmem(&buffer[1], buffer_ofs-3, &header, sizeof(header));
+        const uint8_t *p = (const uint8_t *)memmem(&buffer[1], buffer_ofs-2, &header, sizeof(header));
         if (p != nullptr) {
             const uint16_t n = p - &buffer[0];
             memmove(&buffer[0], p, buffer_ofs - n);
@@ -123,13 +123,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     WITH_SEMAPHORE(state.sem);
 
     if (!setup_complete) {
-        return false;
+        return true;
     }
     // ensure we own the uart
     uart->begin(0);
     uint32_t n = uart->available();
     if (n == 0) {
-        return false;
+        return true;
     }
     if (n + buffer_ofs > sizeof(buffer)) {
         n = sizeof(buffer) - buffer_ofs;
@@ -143,7 +143,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             re_sync();
             return false;
         }
-        if (buffer_ofs > h->msg_len+8) {
+        if (buffer_ofs > h->msg_len+2) {
             re_sync();
             return false;
         }
@@ -158,6 +158,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     buffer_ofs += n;
 
     if (buffer_ofs < sizeof(ILabsHeader)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: packet skipping");
         return true;
     }
 
@@ -296,10 +297,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 break;
             }
             case MessageType::GNSS_POSITION: {
-                CHECK_SIZE(u.position);
-                ilab_gps_data.latitude = u.position.lat; // deg*1.0e7
-                ilab_gps_data.longitude = u.position.lon; // deg*1.0e7
-                ilab_gps_data.altitude = u.position.alt; // cm
+                CHECK_SIZE(u.gnss_position);
+                ilab_gps_data.latitude = u.gnss_position.lat; // deg*1.0e7
+                ilab_gps_data.longitude = u.gnss_position.lon; // deg*1.0e7
+                ilab_gps_data.altitude = u.gnss_position.alt; // cm
                 break;
             }
             case MessageType::GNSS_VEL_TRACK: {
@@ -996,7 +997,7 @@ void AP_ExternalAHRS_InertialLabs::update_thread()
 
     setup_complete = true;
     while (true) {
-        if (!check_uart()) {
+        if (check_uart()) {
             hal.scheduler->delay_microseconds(250);
         }
     }
@@ -1276,4 +1277,3 @@ void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, 
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
-
