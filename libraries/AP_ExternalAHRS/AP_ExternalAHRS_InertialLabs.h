@@ -60,6 +60,7 @@ public:
         GYRO_DATA_HR = 0x21,
         BARO_DATA = 0x25,
         MAG_DATA = 0x24,
+        SENSOR_BIAS = 0x26,
         ORIENTATION_ANGLES = 0x07,
         VELOCITIES = 0x12,
         POSITION = 0x10,
@@ -72,6 +73,7 @@ public:
         GNSS_JAM_STATUS = 0xC0,
         DIFFERENTIAL_PRESSURE = 0x28,
         TRUE_AIRSPEED = 0x86,
+        CALIBRATED_AIRSPEED = 0x85,
         WIND_SPEED = 0x8A,
         AIR_DATA_STATUS = 0x8D,
         SUPPLY_VOLTAGE = 0x50,
@@ -119,6 +121,16 @@ public:
         Vector3f tofloat(void) {
             return Vector3f(x,y,z);
         }
+    };
+
+    struct PACKED sensor_bias_t {
+        int8_t gyroX; // deg/s*0.5*1e5
+        int8_t gyroY; // deg/s*0.5*1e5
+        int8_t gyroZ; // deg/s*0.5*1e5
+        int8_t accX; // g*0.5*1e6
+        int8_t accY; // g*0.5*1e6
+        int8_t accZ; // g*0.5*1e6
+        int8_t reserved;
     };
 
     struct PACKED gnss_extended_info_t {
@@ -196,6 +208,7 @@ public:
             int32_t baro_alt; // meters*100
         } baro_data;
         vec3_16_t mag_data; // nT/10
+        sensor_bias_t sensor_bias;
         struct PACKED {
             uint16_t yaw; // deg*100
             int16_t pitch; // deg*100
@@ -224,6 +237,7 @@ public:
         uint8_t gnss_jam_status;
         int32_t differential_pressure; // mbar*1e4
         int16_t true_airspeed; // m/s*100
+        int16_t calibrated_airspeed; // m/s*100
         vec3_16_t wind_speed; // m/s*100
         uint16_t air_data_status;
         uint16_t supply_voltage; // V*100
@@ -320,9 +334,11 @@ private:
         ins_accuracy_t ins_accuracy;
         float baro_alt;
         float true_airspeed;
+        float calibrated_airspeed;
         Vector3f wind_speed;
         float airspeed_sf;
         uint16_t air_data_status;
+        sensor_bias_t sensor_bias;
     };
 
     struct ILAB_EXT_DATA {
