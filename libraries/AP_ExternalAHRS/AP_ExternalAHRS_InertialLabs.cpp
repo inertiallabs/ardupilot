@@ -266,6 +266,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 ilab_sensors_data.mag = u.mag_data.tofloat().rfu_to_frd()*(10.0f*NTESLA_TO_MGAUSS); // NED, in milligauss
                 break;
             }
+            case MessageType::SENSOR_BIAS: {
+                CHECK_SIZE(u.sensor_bias);
+                ilab_ins_data.sensor_bias = u.sensor_bias;
+                break;
+            }
             case MessageType::ORIENTATION_ANGLES: {
                 CHECK_SIZE(u.orientation_angles);
                 ilab_ins_data.yaw = static_cast<float>(u.orientation_angles.yaw)*0.01f; // deg
@@ -333,6 +338,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             case MessageType::TRUE_AIRSPEED: {
                 CHECK_SIZE(u.true_airspeed);
                 ilab_ins_data.true_airspeed = static_cast<float>(u.true_airspeed)*0.01f; // m/s
+                break;
+            }
+            case MessageType::CALIBRATED_AIRSPEED: {
+                CHECK_SIZE(u.calibrated_airspeed);
+                ilab_ins_data.calibrated_airspeed = static_cast<float>(u.calibrated_airspeed)*0.01f; // m/s
                 break;
             }
             case MessageType::WIND_SPEED: {
@@ -623,6 +633,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
     ilab_ins_data_avr.baro_alt += ilab_ins_data.baro_alt;
     ilab_ins_data_avr.true_airspeed += ilab_ins_data.true_airspeed;
+    ilab_ins_data_avr.calibrated_airspeed += ilab_ins_data.calibrated_airspeed;
     ilab_ins_data_avr.wind_speed += ilab_ins_data.wind_speed;
     ilab_ins_data_avr.airspeed_sf += ilab_ins_data.airspeed_sf;
     ilab_ins_data_avr.air_data_status |= ilab_ins_data.air_data_status;
@@ -649,6 +660,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
         ilab_ins_data_avr.baro_alt /= n_avr;
         ilab_ins_data_avr.true_airspeed /= n_avr;
+        ilab_ins_data_avr.calibrated_airspeed /= n_avr;
         ilab_ins_data_avr.wind_speed /= n_avr;
         ilab_ins_data_avr.airspeed_sf /= n_avr;
 
@@ -675,6 +687,29 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     ilab_sensors_data_avr.accel.x, ilab_sensors_data_avr.accel.y, ilab_sensors_data_avr.accel.z,
                                     ilab_sensors_data_avr.mag.x, ilab_sensors_data_avr.mag.y, ilab_sensors_data_avr.mag.z);
 
+        // @LoggerMessage: ILBX
+        // @Description: InertialLabs AHRS data10
+        // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
+        // @Field: GyrX: Gyro bias X
+        // @Field: GyrY: Gyro bias Y
+        // @Field: GyrZ: Gyro bias Z
+        // @Field: AccX: Accel bias X
+        // @Field: AccY: Accel bias Y
+        // @Field: AccZ: Accel bias Z
+
+        AP::logger().WriteStreaming("ILBX", "TimeUS,IMS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ",
+                                    "s-kkk---",
+                                    "F-------",
+                                    "QIffffff",
+                                    now_us, ilab_ins_data.ms_tow,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroY)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-6f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accY)*2.0f*1.0e-6f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-6f);
+
         // @LoggerMessage: ILB2
         // @Description: InertialLabs AHRS data2
         // @Field: TimeUS: Time since system startup
@@ -684,18 +719,19 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: Temp: Temperature
         // @Field: Alt: Baro altitude
         // @Field: TAS: true airspeed
+        // @Field: CAS: calibrated airspeed
         // @Field: VWN: Wind velocity north
         // @Field: VWE: Wind velocity east
         // @Field: ArspSF: The scale factor (SF) for measured air speed
         // @Field: ADU: Air Data Unit status
 
-        AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,VWN,VWE,ArspSF,ADU",
-                                    "s-PPOmnnn--",
-                                    "F----------",
-                                    "QIffffffffH",
+        AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF,ADU",
+                                    "s-PPOmmnnn--",
+                                    "F-----------",
+                                    "QIfffffffffH",
                                     now_us, ilab_ins_data.ms_tow,
                                     ilab_sensors_data_avr.pressure, ilab_sensors_data_avr.diff_press, ilab_sensors_data_avr.temperature,
-                                    ilab_ins_data_avr.baro_alt, ilab_ins_data_avr.true_airspeed,
+                                    ilab_ins_data_avr.baro_alt, ilab_ins_data_avr.true_airspeed, ilab_ins_data_avr.calibrated_airspeed,
                                     ilab_ins_data_avr.wind_speed.x, ilab_ins_data_avr.wind_speed.y, ilab_ins_data_avr.airspeed_sf,
                                     ilab_ins_data_avr.air_data_status);
 
