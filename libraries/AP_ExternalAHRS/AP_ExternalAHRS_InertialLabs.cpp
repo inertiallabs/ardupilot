@@ -516,16 +516,27 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         if (hasNewGpsData) {
             // use IL INS navigation solution instead of GNSS solution
             gps_data.ms_tow = ilab_ins_data.ms_tow;
+            gps_data.gps_week = ilab_gps_data.gps_week;
             gps_data.latitude = ilab_ins_data.latitude;
             gps_data.longitude = ilab_ins_data.longitude;
             gps_data.msl_altitude = ilab_ins_data.altitude;
             gps_data.ned_vel_north = ilab_ins_data.velocity.x;
             gps_data.ned_vel_east = ilab_ins_data.velocity.y;
             gps_data.ned_vel_down = ilab_ins_data.velocity.z;
-            gps_data.satellites_in_view = ilab_gps_data.full_sat_info.SolnSVs;
-            gps_data.hdop = static_cast<float>(ilab_gps_data.dop.hdop)*0.1f;
-            gps_data.vdop = static_cast<float>(ilab_gps_data.dop.vdop)*0.1f;
-            gps_data.fix_type = ilab_gps_data.fix_type+1;
+
+         if ((ilab_ins_data.unit_status2 & IL_USW2::GNSS_FUSION_OFF) != 0 ||
+                (ilab_gps_data.fix_type != 2) ||
+                (ilab_gps_data.gnss_sol_status != 0)) {
+                gps_data.satellites_in_view = 77;
+                gps_data.hdop = 90.0f; // 0.9
+                gps_data.vdop = 90.0f; // 0.9
+                gps_data.fix_type = 3;
+            } else {
+                gps_data.satellites_in_view = ilab_gps_data.full_sat_info.SolnSVs;
+                gps_data.hdop = static_cast<float>(ilab_gps_data.dop.hdop)*0.1f;
+                gps_data.vdop = static_cast<float>(ilab_gps_data.dop.vdop)*0.1f;
+                gps_data.fix_type = ilab_gps_data.fix_type+1;
+            }
 
             gps_data.latitude_raw = ilab_gps_data.latitude;
             gps_data.longitude_raw = ilab_gps_data.longitude;
