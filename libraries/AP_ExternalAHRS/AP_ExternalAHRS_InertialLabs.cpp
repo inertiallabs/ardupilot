@@ -986,11 +986,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
 
             if (last_ins_status.spoof_status == 2) {
-                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS spoofing indicated");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS spoofing indicated");
             }
 
             if (last_ins_status.spoof_status == 3) {
-                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS multiple spoofing indicated");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS multiple spoofing indicated");
             }
 
             last_ins_status.spoof_status = ilab_gps_data.spoof_status;
@@ -1003,7 +1003,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             }
 
             if (ilab_gps_data.jam_status == 3) {
-                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: GNSS jamming indicated and no fix");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS jamming indicated and no fix");
             }
 
             last_ins_status.jam_status = ilab_gps_data.jam_status;
@@ -1015,15 +1015,15 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 last_ins_status.ins_sol_status == 6 ||
                 last_ins_status.ins_sol_status == 8) &&
                 ilab_ins_data.ins_sol_status == 0) {
-                GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS solution is good");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS solution is good");
             }
 
-            if (ilab_ins_data.ins_sol_status == 4) {
-                GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS is operating in autonomous mode");
+            if ((ilab_ins_data.ins_sol_status) == 4 && (last_ins_status.ins_sol_status == 0)) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS is operating in autonomous mode");
             }
 
             if (ilab_ins_data.ins_sol_status == 6) {
-                GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "ILAB: INS froze position and velocity");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS froze position and velocity");
             }
 
             if (ilab_ins_data.ins_sol_status == 8) {
