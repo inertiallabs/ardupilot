@@ -28,6 +28,7 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/Location.h>
 #include <AP_NavEKF/AP_Nav_Common.h>
+#include <GCS_MAVLink/GCS_MAVLink.h>
 
 class AP_ExternalAHRS_backend;
 
@@ -128,6 +129,7 @@ public:
     void write_bytes(const char *bytes, uint8_t len);
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     bool get_estimate_wind(Vector3f &wind) const;
+    void handle_msg(mavlink_channel_t chan, const mavlink_message_t &msg);
 
     // update backend
     void update();
@@ -192,12 +194,7 @@ public:
         ILAB_TRANSMIT_AIRSPEED  = (1U << 1), // transmit airspeed to IL INS
         ILAB_SEND_STATUS        = (1U << 2), // send IL INS status messages to GCS
         ILAB_USE_WIND_EST       = (1U << 3), // use IL INS estimated wind speed in ArduPilot subsystems
-        ILAB_TRANSMIT_GPS_INPUT = (1U << 4), // transmit GPS_INPUT [232] MAVLink message to IL INS
     };
-
-    bool check_eahrs_option(OPTIONS option) const {
-        return option_is_set(option);
-    }
 
 protected:
 
