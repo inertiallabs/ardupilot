@@ -551,7 +551,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             gps_data.latitude_raw = ilab_gps_data.latitude;
             gps_data.longitude_raw = ilab_gps_data.longitude;
             gps_data.altitude_raw = ilab_gps_data.altitude;
-            gps_data.track_over_ground_raw = ilab_gps_data.track_over_ground;
+            gps_data.track_over_ground_raw = static_cast<int32_t>(ilab_gps_data.track_over_ground);
             gps_data.gps_raw_status = ilab_gps_data.gnss_sol_status;
 
             uint8_t instance;
