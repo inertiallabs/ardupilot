@@ -1212,7 +1212,7 @@ void AP_ExternalAHRS_InertialLabs::send_EAHRS_status_report(uint16_t &last_state
 {
     uint64_t now_ms = AP_HAL::millis();
 
-    for (size_t i = 0; i <= msg_list_size; i++) {
+    for (size_t i = 0; i < msg_list_size; i++) {
         bool current_status = current_state & msg_list[i].status;
         bool last_status = last_state & msg_list[i].status;
         if ((msg_list[i].severity == MAV_SEVERITY_CRITICAL) && (current_status == true)) {
