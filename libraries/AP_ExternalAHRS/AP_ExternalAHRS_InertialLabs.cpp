@@ -1327,4 +1327,26 @@ void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, 
 
 }
 
+void AP_ExternalAHRS_InertialLabs::handle_msg(const mavlink_message_t &msg)
+{
+    switch (msg.msgid) {
+        case MAVLINK_MSG_ID_GPS_INPUT: {
+            mavlink_gps_input_t packet;
+            mavlink_msg_gps_input_decode(&msg, &packet);
+
+            ExternalAHRS_command_data data;
+            data.x = packet.lat;
+            data.y = packet.lon;
+            data.param1 = 0.0f;
+            data.param2 = 0.0f;
+            data.param3 = 0.0f;
+            data.param4 = 0.0f;
+            data.z = 0.0f;
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION, data);
+
+            break;
+        }
+    }
+}
+
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
