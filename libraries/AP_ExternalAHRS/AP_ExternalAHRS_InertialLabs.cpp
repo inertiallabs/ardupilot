@@ -665,7 +665,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ilab_ins_data_avr.airspeed_sf /= n_avr;
 
         // @LoggerMessage: ILB1
-        // @Description: InertialLabs AHRS data1
+        // @Description: InertialLabs IMU and Mag data
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: GyrX: Gyro X
@@ -679,7 +679,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: MagZ: Magnetometer Z
 
         AP::logger().WriteStreaming("ILB1", "TimeUS,IMS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,MagX,MagY,MagZ",
-                                    "s-kkkooo---",
+                                    "s-kkkoooGGG",
                                     "F----------",
                                     "QIfffffffff",
                                     now_us, ilab_ins_data.ms_tow,
@@ -688,7 +688,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     ilab_sensors_data_avr.mag.x, ilab_sensors_data_avr.mag.y, ilab_sensors_data_avr.mag.z);
 
         // @LoggerMessage: ILBX
-        // @Description: InertialLabs AHRS data10
+        // @Description: InertialLabs sensors bias data
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: GyrX: Gyro bias X
@@ -703,15 +703,15 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F-------",
                                     "QIffffff",
                                     now_us, ilab_ins_data.ms_tow,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroY)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-6f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accY)*2.0f*1.0e-6f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-6f);
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroY)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accY)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-5f);
 
         // @LoggerMessage: ILB2
-        // @Description: InertialLabs AHRS data2
+        // @Description: InertialLabs ADC data
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: Press: Static pressure
@@ -726,7 +726,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: ADU: Air Data Unit status
 
         AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF,ADU",
-                                    "s-PPOmmnnn--",
+                                    "s-PPOmnnnn--",
                                     "F-----------",
                                     "QIfffffffffH",
                                     now_us, ilab_ins_data.ms_tow,
@@ -736,7 +736,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     ilab_ins_data_avr.air_data_status);
 
         // @LoggerMessage: ILB3
-        // @Description: InertialLabs AHRS data3
+        // @Description: InertialLabs INS data
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: Roll: euler roll
@@ -773,7 +773,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
     if (hasNewGpsData) {
         // @LoggerMessage: ILB4
-        // @Description: InertialLabs AHRS data4
+        // @Description: InertialLabs GPS data1
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: GMS: GNSS Position timestamp
@@ -797,7 +797,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     ilab_gps_data.track_over_ground, ilab_gps_data.hor_speed, ilab_gps_data.ver_speed);
 
         // @LoggerMessage: ILB5
-        // @Description: InertialLabs AHRS data5
+        // @Description: InertialLabs GPS data2
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: FType: fix type
@@ -824,7 +824,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     static_cast<float>(ilab_gps_data.dop.tdop)*1.0e-3f);
 
         // @LoggerMessage: ILB6
-        // @Description: InertialLabs AHRS data6
+        // @Description: InertialLabs GPS data3
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: SVs: number of satellites tracked
@@ -852,7 +852,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                           IL_NewAidingData::NEW_ALTITUDE |
                                           IL_NewAidingData::NEW_HEADING)) != 0) {
         // @LoggerMessage: ILB7
-        // @Description: InertialLabs AHRS data7
+        // @Description: InertialLabs aiding data1
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: Lat: Latitude external
@@ -887,7 +887,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                           IL_NewAidingData::NEW_WIND |
                                           IL_NewAidingData::NEW_AIRSPEED)) != 0) {
         // @LoggerMessage: ILB8
-        // @Description: InertialLabs AHRS data8
+        // @Description: InertialLabs aiding data2
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
         // @Field: Spd: External air or ground speed
@@ -932,8 +932,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                 "F---------",
                                 "QIHHffffff",
                                 now_us, ilab_ins_data.ms_tow, ilab_ext_data.new_aiding_data, ilab_ext_data.new_aiding_data2,
-                                ilab_ins_data.ins_accuracy.lat, ilab_ins_data.ins_accuracy.lon, ilab_ins_data.ins_accuracy.alt,
-                                ilab_ins_data.ins_accuracy.north_vel, ilab_ins_data.ins_accuracy.east_vel, -1.0f*ilab_ins_data.ins_accuracy.ver_vel);
+                                static_cast<float>(ilab_ins_data.ins_accuracy.lat)*1.0e-3,
+                                static_cast<float>(ilab_ins_data.ins_accuracy.lon)*1.0e-3,
+                                static_cast<float>(ilab_ins_data.ins_accuracy.alt)*1.0e-3,
+                                static_cast<float>(ilab_ins_data.ins_accuracy.north_vel)*1.0e-3,
+                                static_cast<float>(ilab_ins_data.ins_accuracy.east_vel)*1.0e-3,
+                                static_cast<float>(ilab_ins_data.ins_accuracy.ver_vel)*1.0e-3);
 
 #endif  // HAL_LOGGING_ENABLED
 
