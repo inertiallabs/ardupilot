@@ -1179,7 +1179,7 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
 }
 
 // get number of points to downsampling
-uint16_t AP_ExternalAHRS_InertialLabs::get_num_points_to_dec(const uint16_t rate) const
+uint16_t AP_ExternalAHRS_InertialLabs::get_num_points_to_dec(const uint16_t &rate) const
 {
     uint16_t data_rate = get_rate();
     if (rate == 0 || data_rate == 0) {
