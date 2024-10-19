@@ -945,7 +945,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     if (send_ilab_status) {
         // Send IL INS status messages to GCS via MAVLink
         if (ilab_ins_data.unit_status != last_ins_status.unit_status) {
-            send_EAHRS_status_report(last_ins_status.unit_status, ilab_ins_data.unit_status, IL_usw_msg, IL_usw_msg_size, IL_usw_last_msg_ms); // IL INS Unit Status Word (USW) messages
+            send_EAHRS_status_msg(last_ins_status.unit_status, ilab_ins_data.unit_status, IL_usw_msg, IL_usw_msg_size, IL_usw_last_msg_ms); // IL INS Unit Status Word (USW) messages
 
             if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) {
                 if ((last_ins_status.mag_clb_status & (1 << 0)) == 0) {
@@ -972,11 +972,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
 
         if (ilab_ins_data.unit_status2 != last_ins_status.unit_status2) {
-            send_EAHRS_status_report(last_ins_status.unit_status2, ilab_ins_data.unit_status2, IL_usw2_msg, IL_usw2_msg_size, IL_usw2_last_msg_ms); // IL INS Unit Status Word 2 (USW2) messages
+            send_EAHRS_status_msg(last_ins_status.unit_status2, ilab_ins_data.unit_status2, IL_usw2_msg, IL_usw2_msg_size, IL_usw2_last_msg_ms); // IL INS Unit Status Word 2 (USW2) messages
         }
 
         if (ilab_ins_data.air_data_status != last_ins_status.air_data_status) {
-            send_EAHRS_status_report(last_ins_status.air_data_status, ilab_ins_data.air_data_status, IL_adu_msg, IL_adu_msg_size, IL_adu_last_msg_ms); // IL Air Data Unit (ADU) messages
+            send_EAHRS_status_msg(last_ins_status.air_data_status, ilab_ins_data.air_data_status, IL_adu_msg, IL_adu_msg_size, IL_adu_last_msg_ms); // IL Air Data Unit (ADU) messages
         }
 
         if (last_ins_status.spoof_status != ilab_gps_data.spoof_status) {
@@ -1196,11 +1196,11 @@ uint16_t AP_ExternalAHRS_InertialLabs::get_num_points_to_dec(const uint16_t rate
 }
 
 // send INS status to GCS via MAVLink
-void AP_ExternalAHRS_InertialLabs::send_EAHRS_status_report(uint16_t &last_state,
-                                                            uint16_t &current_state,
-                                                            const ILStatusMessage* msg_list,
-                                                            const size_t &msg_list_size,
-                                                            uint64_t* last_msg)
+void AP_ExternalAHRS_InertialLabs::send_EAHRS_status_msg(uint16_t &last_state,
+                                                         uint16_t &current_state,
+                                                         const ILStatusMessage* msg_list,
+                                                         const size_t &msg_list_size,
+                                                         uint64_t* last_msg)
 {
     uint64_t now_ms = AP_HAL::millis();
 
