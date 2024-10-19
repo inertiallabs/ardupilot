@@ -130,6 +130,7 @@ public:
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     bool get_estimate_wind(Vector3f &wind) const;
     void handle_msg(mavlink_channel_t chan, const mavlink_message_t &msg);
+    void send_eahrs_status_flag(class GCS_MAVLINK &link) const;
 
     // update backend
     void update();
