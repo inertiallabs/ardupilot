@@ -915,7 +915,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     }
 
     // @LoggerMessage: ILB9
-    // @Description: InertialLabs AHRS data9
+    // @Description: InertialLabs service data
     // @Field: TimeUS: Time since system startup
     // @Field: IMS: GPS INS time (round)
     // @Field: NAD1: New Aiding Data
@@ -949,7 +949,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
             if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) {
                 if ((last_ins_status.mag_clb_status & (1 << 0)) == 0) {
-                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration data accumulation");
+                     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration data accumulation");
                     last_ins_status.mag_clb_status |= (1 << 0);
                     last_ins_status.mag_clb_status &= ~(1 << 2);
                 } else {
@@ -1012,10 +1012,10 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         if (last_ins_status.ins_sol_status != ilab_ins_data.ins_sol_status) {
             // IL INS navigation solution status messages
             if ((last_ins_status.ins_sol_status == 4 ||
-                last_ins_status.ins_sol_status == 6 ||
-                last_ins_status.ins_sol_status == 8) &&
-                ilab_ins_data.ins_sol_status == 0) {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS solution is good");
+                 last_ins_status.ins_sol_status == 6 ||
+                 last_ins_status.ins_sol_status == 8) &&
+                 ilab_ins_data.ins_sol_status == 0) {
+                 GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS solution is good");
             }
 
             if ((ilab_ins_data.ins_sol_status) == 4 && (last_ins_status.ins_sol_status == 0)) {
@@ -1272,6 +1272,7 @@ void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
     uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
 }
 
+// Handle incoming commands and aiding data for IL INS
 void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
 {
     switch (command) {
@@ -1316,9 +1317,9 @@ void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, 
         default:
             GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: Invalid command for handling");
     }
-
 }
 
+//  Handle an incoming mavlink message
 void AP_ExternalAHRS_InertialLabs::handle_msg(const mavlink_message_t &msg)
 {
     switch (msg.msgid) {
@@ -1341,6 +1342,7 @@ void AP_ExternalAHRS_InertialLabs::handle_msg(const mavlink_message_t &msg)
     }
 }
 
+// Send EAHRS status flag to GCS
 void AP_ExternalAHRS_InertialLabs::send_eahrs_status_flag(GCS_MAVLINK &link) const
 {
     const mavlink_eahrs_status_info_t package{ilab_ins_data.unit_status,
