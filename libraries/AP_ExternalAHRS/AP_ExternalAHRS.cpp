@@ -399,6 +399,13 @@ void AP_ExternalAHRS::handle_command(ExternalAHRS_command command, const Externa
     }
 }
 
+void AP_ExternalAHRS::send_eahrs_status_flag(GCS_MAVLINK &link) const
+{
+    if (backend) {
+        backend->send_eahrs_status_flag(link);
+    }
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {
