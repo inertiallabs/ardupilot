@@ -317,6 +317,13 @@ void AP_ExternalAHRS::handle_msg(mavlink_channel_t chan, const mavlink_message_t
 }
 #endif
 
+void AP_ExternalAHRS::send_eahrs_status_flag(GCS_MAVLINK &link) const
+{
+    if (backend) {
+        backend->send_eahrs_status_flag(link);
+    }
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {
