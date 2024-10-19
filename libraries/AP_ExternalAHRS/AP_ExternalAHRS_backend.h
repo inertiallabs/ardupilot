@@ -47,6 +47,7 @@ public:
     virtual void write_bytes(const char *bytes, uint8_t len) {};
     virtual void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) {};
     virtual bool get_wind_estimation(Vector3f &wind) { return false; }
+    virtual void send_eahrs_status_flag(class GCS_MAVLINK &link) const {}
 
 #if HAL_GCS_ENABLED
     virtual void handle_msg(const mavlink_message_t &msg) { return ; }

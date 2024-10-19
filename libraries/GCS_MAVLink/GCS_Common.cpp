@@ -1040,6 +1040,7 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_MAG_CAL_REPORT,        MSG_MAG_CAL_REPORT},
 #endif
         { MAVLINK_MSG_ID_EKF_STATUS_REPORT,     MSG_EKF_STATUS_REPORT},
+        { MAVLINK_MSG_ID_EAHRS_STATUS_INFO,     MSG_EAHRS_STATUS_INFO},
         { MAVLINK_MSG_ID_LOCAL_POSITION_NED,    MSG_LOCAL_POSITION},
         { MAVLINK_MSG_ID_PID_TUNING,            MSG_PID_TUNING},
         { MAVLINK_MSG_ID_VIBRATION,             MSG_VIBRATION},
@@ -5945,6 +5946,12 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
         AP::ahrs().send_ekf_status_report(*this);
         break;
+#if AP_AHRS_EXTERNAL_ENABLED
+    case MSG_EAHRS_STATUS_INFO:
+        CHECK_PAYLOAD_SIZE(EAHRS_STATUS_INFO);
+        AP::externalAHRS().send_eahrs_status_flag(*this);
+        break;
+#endif
 #endif
 
     case MSG_MEMINFO:

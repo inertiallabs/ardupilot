@@ -43,6 +43,7 @@ public:
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) override;
     bool get_wind_estimation(Vector3f &wind) override;
     void handle_msg(const mavlink_message_t &msg) override;
+    void send_eahrs_status_flag(class GCS_MAVLINK &link) const override;
 
     // check for new data
     void update() override {

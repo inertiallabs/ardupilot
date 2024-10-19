@@ -1176,14 +1176,6 @@ void AP_ExternalAHRS_InertialLabs::send_status_report(GCS_MAVLINK &link) const
     const float hgt_var = 0;
     const float mag_var = 0;
     mavlink_msg_ekf_status_report_send(link.get_chan(), flags, vel_var, pos_var, hgt_var, mag_var, 0, 0);
-
-    // Send IL INS status flag
-    const mavlink_eahrs_status_info_t package{ilab_ins_data.unit_status,
-                                              ilab_ins_data.unit_status2,
-                                              ilab_ins_data.air_data_status,
-                                              (uint16_t)(ilab_gps_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
-                                              ilab_gps_data.spoof_status};
-    mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
 }
 
 // get number of points to downsampling
@@ -1347,6 +1339,16 @@ void AP_ExternalAHRS_InertialLabs::handle_msg(const mavlink_message_t &msg)
             break;
         }
     }
+}
+
+void AP_ExternalAHRS_InertialLabs::send_eahrs_status_flag(GCS_MAVLINK &link) const
+{
+    const mavlink_eahrs_status_info_t package{ilab_ins_data.unit_status,
+                                              ilab_ins_data.unit_status2,
+                                              ilab_ins_data.air_data_status,
+                                              (uint16_t)(ilab_gps_data.fix_type-1), //< Send ILabs AHRS output as is. Without inc
+                                              ilab_gps_data.spoof_status};
+    mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIAL_LABS_ENABLED
