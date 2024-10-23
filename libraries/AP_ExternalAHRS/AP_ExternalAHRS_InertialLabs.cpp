@@ -533,21 +533,19 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             gps_data.ned_vel_north = ilab_ins_data.velocity.x;
             gps_data.ned_vel_east = ilab_ins_data.velocity.y;
             gps_data.ned_vel_down = ilab_ins_data.velocity.z;
+            gps_data.fix_type = 3; // 3Dfix
 
-         if ((ilab_ins_data.unit_status2 & IL_USW2::GNSS_FUSION_OFF) != 0 ||
-                (ilab_gps_data.fix_type != 2) ||
-                (ilab_gps_data.gnss_sol_status != 0)) {
-                gps_data.satellites_in_view = 77;
-                gps_data.hdop = 90.0f; // 0.9
-                gps_data.vdop = 90.0f; // 0.9
-                gps_data.fix_type = 3;
-            } else {
+            if ((ilab_ins_data.unit_status2 & IL_USW2::GNSS_FUSION_OFF) == 0 &&
+                (ilab_gps_data.gnss_sol_status == 0) &&
+                (ilab_gps_data.fix_type == 2)) { // use valid GNSS data as is
                 gps_data.satellites_in_view = ilab_gps_data.full_sat_info.SolnSVs;
                 gps_data.hdop = static_cast<float>(ilab_gps_data.dop.hdop)*0.1f;
                 gps_data.vdop = static_cast<float>(ilab_gps_data.dop.vdop)*0.1f;
-                gps_data.fix_type = ilab_gps_data.fix_type+1;
+            } else { // set fixed values to continue normal flight in GNSS-denied environments
+                gps_data.satellites_in_view = 77;
+                gps_data.hdop = 90.0f; // 0.9
+                gps_data.vdop = 90.0f; // 0.9
             }
-
             gps_data.latitude_raw = ilab_gps_data.latitude;
             gps_data.longitude_raw = ilab_gps_data.longitude;
             gps_data.altitude_raw = ilab_gps_data.altitude;
