@@ -87,6 +87,7 @@ public:
         FULL_SAT_INFO = 0x37,
         GNSS_VEL_LATENCY = 0x3D,
         GNSS_SOL_STATUS = 0x38,
+        GNSS_POS_VEL_TYPE = 0x39,
         NEW_AIDING_DATA = 0x65,
         NEW_AIDING_DATA2 = 0xA1,
         EXT_SPEED = 0x61,
@@ -251,6 +252,7 @@ public:
         full_sat_info_t full_sat_info;
         uint16_t gnss_vel_latency;
         uint8_t gnss_sol_status;
+        uint8_t gnss_pos_vel_type;
         uint16_t new_aiding_data;
         uint16_t new_aiding_data2;
         int16_t external_speed;
@@ -319,6 +321,7 @@ private:
         full_sat_info_t full_sat_info;
         uint16_t vel_latency;
         uint8_t gnss_sol_status;
+        uint8_t gnss_pos_vel_type;
     };
 
     struct ILAB_INS_DATA{
