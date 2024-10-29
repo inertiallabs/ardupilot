@@ -418,6 +418,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 ilab_gps_data.gnss_sol_status = u.gnss_sol_status;
                 break;
             }
+            case MessageType::GNSS_POS_VEL_TYPE: {
+                CHECK_SIZE(u.gnss_pos_vel_type);
+                ilab_gps_data.gnss_pos_vel_type = u.gnss_pos_vel_type;
+                break;
+            }
             case MessageType::NEW_AIDING_DATA: {
                 CHECK_SIZE(u.new_aiding_data);
                 ilab_ext_data.new_aiding_data = u.new_aiding_data;
@@ -803,18 +808,20 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: GJS: GNSS jamming status
         // @Field: VL: GNSS Velocity latency
         // @Field: SolS: GNSS Solution status
+        // @Field: PVT: GNSS Position or Velocity type
         // @Field: GDOP: GNSS GDOP
         // @Field: PDOP: GNSS PDOP
         // @Field: HDOP: GNSS HDOP
         // @Field: VDOP: GNSS VDOP
         // @Field: TDOP: GNSS TDOP
 
-        AP::logger().WriteStreaming("ILB5", "TimeUS,IMS,FType,GSS,GJS,VL,SolS,GDOP,PDOP,HDOP,VDOP,TDOP",
-                                    "s-----------",
-                                    "F-----------",
-                                    "QIBBBHBfffff",
+        AP::logger().WriteStreaming("ILB5", "TimeUS,IMS,FType,GSS,GJS,VL,SolS,PVT,GDOP,PDOP,HDOP,VDOP,TDOP",
+                                    "s------------",
+                                    "F------------",
+                                    "QIBBBHBBfffff",
                                     now_us, ilab_ins_data.ms_tow, ilab_gps_data.fix_type,
-                                    ilab_gps_data.spoof_status, ilab_gps_data.jam_status, ilab_gps_data.vel_latency, ilab_gps_data.gnss_sol_status,
+                                    ilab_gps_data.spoof_status, ilab_gps_data.jam_status, ilab_gps_data.vel_latency,
+                                    ilab_gps_data.gnss_sol_status, ilab_gps_data.gnss_pos_vel_type,
                                     static_cast<float>(ilab_gps_data.dop.gdop)*1.0e-3f,
                                     static_cast<float>(ilab_gps_data.dop.pdop)*1.0e-3f,
                                     static_cast<float>(ilab_gps_data.dop.hdop)*1.0e-3f,
