@@ -184,6 +184,7 @@ public:
     typedef struct {
         float differential_pressure; // Pa
         float temperature; // degC
+        float airspeed; // m/s
     } airspeed_data_message_t;
 
     // set GNSS disable for auxillary function GPS_DISABLE
@@ -195,6 +196,8 @@ public:
         VN_UNCOMP_IMU          = (1U << 0),
         ILAB_TRANSMIT_AIRSPEED = (1U << 1), // transmit airspeed to IL INS
         ILAB_SEND_STATUS       = (1U << 2), // send IL INS status messages to GCS
+        RESERVED               = (1U << 3), // use IL INS estimated wind speed in ArduPilot subsystems
+        ILAB_USE_AIRSPEED      = (1U << 4), // use IL INS calculated true airspeed in ArduPilot subsystems
     };
 
 protected:
