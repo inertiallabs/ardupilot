@@ -620,7 +620,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     ilab_sensors_data_avr.pressure += ilab_sensors_data.pressure;
     ilab_sensors_data_avr.diff_press += ilab_sensors_data.diff_press;
     ilab_sensors_data_avr.temperature += ilab_sensors_data.temperature;
-    ilab_sensors_data_avr.supply_voltage += ilab_sensors_data.supply_voltage;
 
     ilab_ins_data_avr.yaw += ilab_ins_data.yaw;
     ilab_ins_data_avr.pitch += ilab_ins_data.pitch;
@@ -630,16 +629,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     ilab_ins_data_avr.longitude += ilab_ins_data.longitude;
     ilab_ins_data_avr.altitude += ilab_ins_data.altitude;
     ilab_ins_data_avr.velocity += ilab_ins_data.velocity;
-    ilab_ins_data_avr.unit_status |= ilab_ins_data.unit_status;
-    ilab_ins_data_avr.unit_status2 |= ilab_ins_data.unit_status2;
-    ilab_ins_data_avr.ins_sol_status |= ilab_ins_data.ins_sol_status;
 
     ilab_ins_data_avr.baro_alt += ilab_ins_data.baro_alt;
     ilab_ins_data_avr.true_airspeed += ilab_ins_data.true_airspeed;
     ilab_ins_data_avr.calibrated_airspeed += ilab_ins_data.calibrated_airspeed;
     ilab_ins_data_avr.wind_speed += ilab_ins_data.wind_speed;
     ilab_ins_data_avr.airspeed_sf += ilab_ins_data.airspeed_sf;
-    ilab_ins_data_avr.air_data_status |= ilab_ins_data.air_data_status;
 
     log_counter++;
 
@@ -650,7 +645,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ilab_sensors_data_avr.pressure /= n_avr;
         ilab_sensors_data_avr.diff_press /= n_avr;
         ilab_sensors_data_avr.temperature /= n_avr;
-        ilab_sensors_data_avr.supply_voltage /= n_avr;
 
         ilab_ins_data_avr.yaw /= n_avr;
         ilab_ins_data_avr.pitch /= n_avr;
@@ -706,12 +700,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F-------",
                                     "QIffffff",
                                     now_us, ilab_ins_data.ms_tow,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-4f,
                                     static_cast<float>(ilab_ins_data.sensor_bias.gyroY)*2.0f*1.0e-4f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-4f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-4f*(-1.0f),
                                     static_cast<float>(ilab_ins_data.sensor_bias.accY)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-5f);
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-5f*(-1.0f));
 
         // @LoggerMessage: ILB2
         // @Description: InertialLabs ADC data
@@ -726,17 +720,15 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VWN: Wind velocity north
         // @Field: VWE: Wind velocity east
         // @Field: ArspSF: The scale factor (SF) for measured air speed
-        // @Field: ADU: Air Data Unit status
 
-        AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF,ADU",
-                                    "s-PPOmnnnn--",
-                                    "F-----------",
-                                    "QIfffffffffH",
+        AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF",
+                                    "s-PPOmnnnn-",
+                                    "F----------",
+                                    "QIfffffffff",
                                     now_us, ilab_ins_data.ms_tow,
                                     ilab_sensors_data_avr.pressure, ilab_sensors_data_avr.diff_press, ilab_sensors_data_avr.temperature,
                                     ilab_ins_data_avr.baro_alt, ilab_ins_data_avr.true_airspeed, ilab_ins_data_avr.calibrated_airspeed,
-                                    ilab_ins_data_avr.wind_speed.x, ilab_ins_data_avr.wind_speed.y, ilab_ins_data_avr.airspeed_sf,
-                                    ilab_ins_data_avr.air_data_status);
+                                    ilab_ins_data_avr.wind_speed.x, ilab_ins_data_avr.wind_speed.y, ilab_ins_data_avr.airspeed_sf);
 
         // @LoggerMessage: ILB3
         // @Description: InertialLabs INS data
@@ -750,24 +742,18 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VD: velocity down
         // @Field: Lat: latitude
         // @Field: Lng: longitude
-        // @Field: Alt: altitude MSL
-        // @Field: USW: USW1
-        // @Field: USW2: USW2
-        // @Field: Vdc: Supply voltage
-        // @Field: ISS: INS Navigation (Solution) Status
+        // @Field: Alt: altitude
 
-        AP::logger().WriteStreaming("ILB3", "TimeUS,IMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt,USW,USW2,Vdc,ISS",
-                                    "s-dddnnnDUm--v-",
-                                    "F--------------",
-                                    "QIfffffffffHHfB",
+        AP::logger().WriteStreaming("ILB3", "TimeUS,IMS,Roll,Pitch,Yaw,VN,VE,VD,Lat,Lng,Alt",
+                                    "s-dddnnnDUm",
+                                    "F----------",
+                                    "QIfffffffff",
                                     now_us, ilab_ins_data.ms_tow,
                                     ilab_ins_data_avr.roll, ilab_ins_data_avr.pitch, ilab_ins_data_avr.yaw,
                                     ilab_ins_data_avr.velocity.x, ilab_ins_data_avr.velocity.y, ilab_ins_data_avr.velocity.z,
                                     static_cast<float>(ilab_ins_data_avr.latitude)*1.0e-7f,
                                     static_cast<float>(ilab_ins_data_avr.longitude)*1.0e-7f,
-                                    static_cast<float>(ilab_ins_data_avr.altitude)*0.01f,
-                                    ilab_ins_data_avr.unit_status, ilab_ins_data_avr.unit_status2,
-                                    ilab_sensors_data_avr.supply_voltage, ilab_ins_data_avr.ins_sol_status);
+                                    static_cast<float>(ilab_ins_data_avr.altitude)*0.01f);
 
         ilab_sensors_data_avr = {};
         ilab_ins_data_avr = {};
@@ -781,6 +767,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: IMS: GPS INS time (round)
         // @Field: GMS: GNSS Position timestamp
         // @Field: GWk: GPS Week
+        // @Field: FType: fix type
         // @Field: NewGPS: Indicator of new update of GPS data
         // @Field: Lat: GNSS Latitude
         // @Field: Lng: GNSS Longitude
@@ -789,11 +776,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: Spd: GNSS Horizontal speed
         // @Field: VZ: GNSS Vertical speed
 
-        AP::logger().WriteStreaming("ILB4", "TimeUS,IMS,GMS,GWk,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ",
-                                    "s----DUmhnn",
-                                    "F----------",
-                                    "QIIHBffffff",
-                                    now_us, ilab_ins_data.ms_tow, ilab_gps_data.ms_tow, ilab_gps_data.gps_week, ilab_gps_data.new_data,
+        AP::logger().WriteStreaming("ILB4", "TimeUS,IMS,GMS,GWk,FType,NewGPS,Lat,Lng,Alt,GCrs,Spd,VZ",
+                                    "s-----DUmhnn",
+                                    "F-----------",
+                                    "QIIHBBffffff",
+                                    now_us, ilab_ins_data.ms_tow, ilab_gps_data.ms_tow, ilab_gps_data.gps_week,
+                                    ilab_gps_data.fix_type, ilab_gps_data.new_data,
                                     static_cast<float>(ilab_gps_data.latitude)*1.0e-7f,
                                     static_cast<float>(ilab_gps_data.longitude)*1.0e-7f,
                                     static_cast<float>(ilab_gps_data.altitude)*0.01f,
@@ -803,7 +791,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Description: InertialLabs GPS data2
         // @Field: TimeUS: Time since system startup
         // @Field: IMS: GPS INS time (round)
-        // @Field: FType: fix type
         // @Field: GSS: GNSS spoofing status
         // @Field: GJS: GNSS jamming status
         // @Field: VL: GNSS Velocity latency
@@ -815,11 +802,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: VDOP: GNSS VDOP
         // @Field: TDOP: GNSS TDOP
 
-        AP::logger().WriteStreaming("ILB5", "TimeUS,IMS,FType,GSS,GJS,VL,SolS,PVT,GDOP,PDOP,HDOP,VDOP,TDOP",
-                                    "s------------",
-                                    "F------------",
-                                    "QIBBBHBBfffff",
-                                    now_us, ilab_ins_data.ms_tow, ilab_gps_data.fix_type,
+        AP::logger().WriteStreaming("ILB5", "TimeUS,IMS,GSS,GJS,VL,SolS,PVT,GDOP,PDOP,HDOP,VDOP,TDOP",
+                                    "s-----------",
+                                    "F-----------",
+                                    "QIBBHBBfffff",
+                                    now_us, ilab_ins_data.ms_tow,
                                     ilab_gps_data.spoof_status, ilab_gps_data.jam_status, ilab_gps_data.vel_latency,
                                     ilab_gps_data.gnss_sol_status, ilab_gps_data.gnss_pos_vel_type,
                                     static_cast<float>(ilab_gps_data.dop.gdop)*1.0e-3f,
@@ -909,40 +896,35 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F---------",
                                     "QIffffffff",
                                     now_us, ilab_ins_data.ms_tow,
-                                    static_cast<float>(ilab_ext_data.external_speed)*0.5144*0.01f,
+                                    static_cast<float>(ilab_ext_data.external_speed)*0.5144f*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_ambient_air_data.air_temp)*0.1f,
                                     static_cast<float>(ilab_ext_data.ext_ambient_air_data.alt)*0.01f,
-                                    static_cast<float>(ilab_ext_data.ext_ambient_air_data.abs_press)*2,
-                                    static_cast<float>(ilab_ext_data.ext_wind_data.e_wind_vel)*0.5144*0.01f,
-                                    static_cast<float>(ilab_ext_data.ext_wind_data.n_wind_vel)*0.5144*0.01f,
-                                    static_cast<float>(ilab_ext_data.ext_wind_data.e_std_wind)*0.5144*0.01f,
-                                    static_cast<float>(ilab_ext_data.ext_wind_data.n_std_wind)*0.5144*0.01f);
+                                    static_cast<float>(ilab_ext_data.ext_ambient_air_data.abs_press)*2.0f,
+                                    static_cast<float>(ilab_ext_data.ext_wind_data.e_wind_vel)*0.5144f*0.01f,
+                                    static_cast<float>(ilab_ext_data.ext_wind_data.n_wind_vel)*0.5144f*0.01f,
+                                    static_cast<float>(ilab_ext_data.ext_wind_data.e_std_wind)*0.5144f*0.01f,
+                                    static_cast<float>(ilab_ext_data.ext_wind_data.n_std_wind)*0.5144f*0.01f);
     }
 
     // @LoggerMessage: ILB9
     // @Description: InertialLabs service data
     // @Field: TimeUS: Time since system startup
     // @Field: IMS: GPS INS time (round)
+    // @Field: USW: Unit Status Word
+    // @Field: USW2: Unit Status Word 2
+    // @Field: ADU: Air Data Unit status
+    // @Field: ISS: INS Navigation (Solution) Status
     // @Field: NAD1: New Aiding Data
-    // @Field: NAD2: New Aiding Data
-    // @Field: dLat: Latitude accuracy
-    // @Field: dLon: Longitude accuracy
-    // @Field: dAlt: Altitude accuracy
-    // @Field: dVelE: East velocity accuracy
-    // @Field: dVelN: North velocity accuracy
-    // @Field: dVelV: Vertical velocity accuracy
+    // @Field: NAD2: New Aiding Data 2
+    // @Field: Vdc: Supply voltage
 
-    AP::logger().WriteStreaming("ILB9", "TimeUS,IMS,NAD1,NAD2,dLat,dLon,dAlt,dVelE,dVelN,dVelV",
-                                "s---mmmnnn",
-                                "F---------",
-                                "QIHHffffff",
-                                now_us, ilab_ins_data.ms_tow, ilab_ext_data.new_aiding_data, ilab_ext_data.new_aiding_data2,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.lat)*1.0e-3,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.lon)*1.0e-3,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.alt)*1.0e-3,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.north_vel)*1.0e-3,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.east_vel)*1.0e-3,
-                                static_cast<float>(ilab_ins_data.ins_accuracy.ver_vel)*1.0e-3);
+    AP::logger().WriteStreaming("ILB9", "TimeUS,IMS,USW,USW2,ADU,ISS,NAD1,NAD2,Vdc",
+                                "s-------v",
+                                "F--------",
+                                "QIHHHBHHf",
+                                now_us, ilab_ins_data.ms_tow, ilab_ins_data.unit_status, ilab_ins_data.unit_status2,
+                                ilab_ins_data.air_data_status, ilab_ins_data.ins_sol_status,
+                                ilab_ext_data.new_aiding_data, ilab_ext_data.new_aiding_data2, ilab_sensors_data.supply_voltage);
 
 #endif  // HAL_LOGGING_ENABLED
 
