@@ -214,6 +214,7 @@ public:
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED
     void handle_external(const AP_ExternalAHRS::airspeed_data_message_t &pkt);
+    void set_external_airspeed_enabled(bool &airspeed_enabled);
 #endif
     
     enum class CalibrationState {

@@ -600,8 +600,17 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     if ((ilab_ins_data.unit_status2 & IL_USW2::ADU_DIFF_PRESS_FAIL) == 0) {
         airspeed_data.differential_pressure = ilab_sensors_data.diff_press;
         airspeed_data.temperature = ilab_sensors_data.temperature;
+        airspeed_data.airspeed = ilab_ins_data.true_airspeed;
         auto *arsp = AP::airspeed();
         if (arsp != nullptr) {
+            if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
+                // use IL INS calculated true airspeed
+                bool airspeed_enabled = false;
+                if (filter_ok && (ilab_ins_data.air_data_status & IL_ADU::AIRSPEED_FAIL) == 0) {
+                    airspeed_enabled = true;
+                }
+                arsp->set_external_airspeed_enabled(airspeed_enabled);
+            }
             arsp->handle_external(airspeed_data);
         }
     }
