@@ -753,6 +753,22 @@ void AP_Airspeed::handle_external(const AP_ExternalAHRS::airspeed_data_message_t
         }
     }
 }
+
+// Set to use calculated airspeed
+void AP_Airspeed::set_external_airspeed_enabled(bool &airspeed_enabled)
+{
+    {
+        if (!lib_enabled()) {
+            return;
+        }
+
+        for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
+            if (param[i].type == TYPE_EXTERNAL && sensor[i]) {
+                sensor[i]->set_external_airspeed_enabled(airspeed_enabled);
+            }
+        }
+    }
+}
 #endif 
 
 #if HAL_LOGGING_ENABLED
