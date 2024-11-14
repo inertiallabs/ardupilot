@@ -96,6 +96,7 @@ public:
         EXT_HEADING = 0x66,
         EXT_AMBIENT_DATA = 0x6B,
         EXT_WIND_DATA = 0x62,
+        MAG_CLB_ACCURACY = 0x9A,
     };
 
     /*
@@ -261,6 +262,7 @@ public:
         ext_heading_t ext_heading;
         ext_ambient_data_t ext_ambient_air_data;
         ext_wind_data_t ext_wind_data;
+        uint8_t mag_clb_accuracy; // deg*10
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -344,6 +346,7 @@ private:
         float airspeed_sf;
         uint16_t air_data_status;
         sensor_bias_t sensor_bias;
+        uint8_t mag_clb_accuracy;
     };
 
     struct ILAB_EXT_DATA {
