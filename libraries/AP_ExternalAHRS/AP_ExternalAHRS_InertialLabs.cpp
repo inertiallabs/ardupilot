@@ -504,6 +504,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // use IL INS IMU outputs in the ArduPilot algorithm
         ins_data.accel = ilab_sensors_data.accel;
         ins_data.gyro = ilab_sensors_data.gyro;
+        ins_data.temperature = ilab_sensors_data.temperature;
         AP::ins().handle_external(ins_data);
         state.accel = ins_data.accel;
         state.gyro = ins_data.gyro;
