@@ -485,7 +485,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         return false;
     }
 
-    bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
+    const bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
 
     if (filter_ok) {
         // use IL INS attitude data in the ArduPilot algorithm instead of EKF3 or DCM
@@ -509,7 +509,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         state.gyro = ins_data.gyro;
     }
 
-    bool hasNewGpsData = (ilab_gps_data.new_data & (IL_NEWGPS::NEW_GNSS_POSITION|IL_NEWGPS::NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
+    const bool hasNewGpsData = (ilab_gps_data.new_data & (IL_NEWGPS::NEW_GNSS_POSITION|IL_NEWGPS::NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
 
     if (filter_ok) {
         // use IL INS navigation solution instead of EKF3 or DCM
