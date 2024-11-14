@@ -463,6 +463,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 ilab_ext_data.ext_wind_data = u.ext_wind_data;
                 break;
             }
+            case MessageType::MAG_CLB_ACCURACY: {
+                CHECK_SIZE(u.mag_clb_accuracy);
+                ilab_ins_data.mag_clb_accuracy = u.mag_clb_accuracy;
+                break;
+            }
         }
 
         if (msg_len == 0) {
