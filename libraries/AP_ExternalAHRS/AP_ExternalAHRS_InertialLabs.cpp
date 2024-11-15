@@ -950,27 +950,40 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         if (ilab_ins_data.unit_status != last_ins_status.unit_status) {
             send_EAHRS_status_msg(last_ins_status.unit_status, ilab_ins_data.unit_status, IL_usw_msg, IL_usw_msg_size, IL_usw_last_msg_ms); // IL INS Unit Status Word (USW) messages
 
-            if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) {
+            if ((ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) != 0) {
                 if ((last_ins_status.mag_clb_status & (1 << 0)) == 0) {
-                     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration data accumulation");
-                    last_ins_status.mag_clb_status |= (1 << 0);
-                    last_ins_status.mag_clb_status &= ~(1 << 2);
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: VG3D Mag calibration data accumulation");
+                    last_ins_status.mag_clb_status |= (1 << 0); // set bit: VG3D mag calibration data is accumulated
                 } else {
-                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration calculation");
-                    last_ins_status.mag_clb_status |= (1 << 1);
+                    last_ins_status.mag_clb_status |= (1 << 1); // set bit: VG3D mag calibration parameters are calculated
                     last_ins_status.mag_clb_status &= ~(1 << 0);
+                    startMagAcc_ms = now_ms;
                 }
             }
 
-            if (ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_SUCCESS) {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration successful");
-                last_ins_status.mag_clb_status |= (1 << 2);
+            if ((ilab_ins_data.unit_status & IL_USW::MAG_VG3D_CLB_SUCCESS) != 0) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: VG3D Mag calibration successful");
+                last_ins_status.mag_clb_status |= (1 << 2); // set bit: VG3D mag calibration accuracy estimation in progress
                 last_ins_status.mag_clb_status &= ~(1 << 1);
             }
 
-            if (!(last_ins_status.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) && ((last_ins_status.mag_clb_status & (1 << 1)) != 0)) {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: On-the-fly calibration unsuccessful");
+            if ((last_ins_status.mag_clb_status & (1 << 1)) != 0 && (last_ins_status.unit_status & IL_USW::MAG_VG3D_CLB_RUNTIME) == 0) {
+                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ILAB: VG3D Mag calibration unsuccessful");
                 last_ins_status.mag_clb_status &= ~(1 << 1);
+            }
+        }
+
+        if ((last_ins_status.mag_clb_status & (1 << 2)) != 0) {
+            const bool is_time_exceeded = (now_ms > startMagAcc_ms) && (now_ms - startMagAcc_ms > 10000U);
+            const bool is_accuracy_changed = ilab_ins_data.mag_clb_accuracy != last_ins_status.mag_clb_accuracy;
+            if (is_time_exceeded || is_accuracy_changed) {
+                if (ilab_ins_data.mag_clb_accuracy == 255) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: INS cannot estimate heading accuracy");
+                } else if (ilab_ins_data.mag_clb_accuracy != 0) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: Predicted heading error is %.1f deg", static_cast<float>(ilab_ins_data.mag_clb_accuracy)*0.1f);
+                }
+                last_ins_status.mag_clb_status &= ~(1 << 2);
+                last_ins_status.mag_clb_accuracy = ilab_ins_data.mag_clb_accuracy;
             }
         }
 
