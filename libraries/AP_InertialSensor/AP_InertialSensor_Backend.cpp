@@ -748,8 +748,19 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
     _imu._temperature[instance] = temperature;
 
 #if HAL_HAVE_IMU_HEATER
+    uint8_t heater_imu_instance = AP_HEATER_IMU_INSTANCE;
+#if HAL_EXTERNAL_AHRS_ENABLED
+    int8_t external_ahrs_instance = _imu.get_external_ahrs_accel();
+    uint8_t num_accels = MIN(_imu.get_accel_count(), INS_MAX_INSTANCES);
+
+    if (external_ahrs_instance == AP_HEATER_IMU_INSTANCE) {
+        if (num_accels >= 2U) {
+            heater_imu_instance = AP_HEATER_IMU_INSTANCE+1;
+        }
+    }
+#endif
     /* give the temperature to the control loop in order to keep it constant*/
-    if (instance == AP_HEATER_IMU_INSTANCE) {
+    if (instance == heater_imu_instance) {
         AP_BoardConfig *bc = AP::boardConfig();
         if (bc) {
             bc->set_imu_temp(temperature);
