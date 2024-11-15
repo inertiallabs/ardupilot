@@ -47,6 +47,8 @@ void AP_InertialSensor_ExternalAHRS::start()
                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 1, DEVTYPE_SERIAL)) &&
         _imu.register_accel(accel_instance, rate,
                             AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 2, DEVTYPE_SERIAL))) {
+        set_external_ahrs_gyro(gyro_instance);
+        set_external_ahrs_accel(accel_instance);
         started = true;
     }
 }
