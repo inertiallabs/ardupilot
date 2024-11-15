@@ -376,12 +376,14 @@ private:
         uint8_t jam_status;
         uint8_t ins_sol_status;
         uint8_t mag_clb_status;
+        uint8_t mag_clb_accuracy;
     } last_ins_status;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
     uint32_t last_pos_ms;
     uint32_t last_gps_ms;
+    uint32_t startMagAcc_ms;
 
     uint16_t log_counter = 0;
     uint16_t tx_counter = 0;
