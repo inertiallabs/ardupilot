@@ -228,6 +228,9 @@ public:
     uint8_t get_first_usable_accel(void) const { return _first_usable_accel; }
     uint8_t get_first_usable_gyro(void) const { return _first_usable_gyro; }
 
+    // get external AHRS IMU orientation
+    int8_t get_external_ahrs_orientation(void) const { return _external_ahrs_orientation; }
+
     // get the gyro filter rate in Hz
     uint16_t get_gyro_filter_hz(void) const { return _gyro_filter_cutoff; }
 
@@ -666,6 +669,9 @@ private:
 
     // primary instance
     uint8_t _primary;
+
+    // External AHRS IMU orientation
+    AP_Int8 _external_ahrs_orientation;
 
     // mask of accels and gyros which we will be actively using
     // and this should wait for in wait_for_sample()
