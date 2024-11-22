@@ -692,7 +692,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         // @Field: MagZ: Magnetometer Z
 
         AP::logger().WriteStreaming("ILB1", "TimeUS,IMS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,MagX,MagY,MagZ",
-                                    "s-kkkoooGGG",
+                                    "s-EEEoooGGG",
                                     "F----------",
                                     "QIfffffffff",
                                     now_us, ilab_ins_data.ms_tow,
