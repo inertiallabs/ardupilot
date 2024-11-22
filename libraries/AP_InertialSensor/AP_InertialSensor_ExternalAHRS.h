@@ -21,6 +21,8 @@ public:
     bool get_output_banner(char* banner, uint8_t banner_len) override;
 
 private:
+    void update_orientation();
+
     const uint8_t serial_port;
     bool started;
 };
