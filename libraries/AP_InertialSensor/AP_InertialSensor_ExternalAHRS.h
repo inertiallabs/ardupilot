@@ -25,6 +25,7 @@ private:
     uint8_t accel_instance;
     const uint8_t serial_port;
     bool started;
+    enum Rotation rotation;
 };
 #endif // HAL_EXTERNAL_AHRS_ENABLED
 
