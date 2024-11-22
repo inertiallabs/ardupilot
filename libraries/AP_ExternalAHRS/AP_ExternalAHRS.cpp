@@ -71,7 +71,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Transmit airspeed to IL INS,2:Send IL INS status messages to GCS,3:Use IL INS wind estimation,4:Use IL INS true airspeed,5:Disable IL INS GNSS fix type substitution
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag.,1:Transmit airspeed to IL INS,2:Send IL INS status messages to GCS,3:Reserved,4:Use IL INS true airspeed,5:Disable IL INS GNSS fix type substitution
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 

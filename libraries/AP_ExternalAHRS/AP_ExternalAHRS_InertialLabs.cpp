@@ -1275,11 +1275,8 @@ void AP_ExternalAHRS_InertialLabs::make_tx_packet(uint8_t *packet) const
 // Use IL INS estimated wind speed in ArduPilot subsystems
 bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
 {
-    if(option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_WIND_EST)) {
-        wind =  ilab_ins_data.wind_speed;
-        return true;
-    }
-    return false;
+    wind = ilab_ins_data.wind_speed;
+    return true;
 }
 
 // Transmit data to IL INS
