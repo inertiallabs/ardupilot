@@ -776,7 +776,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         log_counter = 0;
     }
 
-    if (hasNewGpsData) {
+    if (ilab_gps_data.new_data != 0) {
         // @LoggerMessage: ILB4
         // @Description: InertialLabs GPS data1
         // @Field: TimeUS: Time since system startup
