@@ -1492,7 +1492,10 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         vacc * 1000,          // one-sigma standard deviation in mm
         sacc * 1000,          // one-sigma standard deviation in mm/s
         0,                    // TODO one-sigma heading accuracy standard deviation
-        gps_yaw_cdeg(0),
+        gps_yaw_cdeg(0));
+
+    mavlink_msg_ahrs_additional_raw_info_send(
+        chan,
         state[0].latitude_raw,           // in 1E7 degrees
         state[0].longitude_raw,          // in 1E7 degrees
         state[0].altitude_raw * 10UL,    // mm
