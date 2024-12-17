@@ -636,6 +636,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     ilab_sensors_data_avr.pressure += ilab_sensors_data.pressure;
     ilab_sensors_data_avr.diff_press += ilab_sensors_data.diff_press;
     ilab_sensors_data_avr.temperature += ilab_sensors_data.temperature;
+    ilab_sensors_data_avr.supply_voltage += ilab_sensors_data.supply_voltage;
 
     ilab_ins_data_avr.yaw += ilab_ins_data.yaw;
     ilab_ins_data_avr.pitch += ilab_ins_data.pitch;
@@ -645,12 +646,19 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     lon_int64_t += ilab_ins_data.longitude;
     ilab_ins_data_avr.altitude += ilab_ins_data.altitude;
     ilab_ins_data_avr.velocity += ilab_ins_data.velocity;
+    ilab_ins_data_avr.unit_status |= ilab_ins_data.unit_status;
+    ilab_ins_data_avr.unit_status2 |= ilab_ins_data.unit_status2;
+    ilab_ins_data_avr.ins_sol_status |= ilab_ins_data.ins_sol_status;
 
     ilab_ins_data_avr.baro_alt += ilab_ins_data.baro_alt;
     ilab_ins_data_avr.true_airspeed += ilab_ins_data.true_airspeed;
     ilab_ins_data_avr.calibrated_airspeed += ilab_ins_data.calibrated_airspeed;
     ilab_ins_data_avr.wind_speed += ilab_ins_data.wind_speed;
     ilab_ins_data_avr.airspeed_sf += ilab_ins_data.airspeed_sf;
+    ilab_ins_data_avr.air_data_status |= ilab_ins_data.air_data_status;
+
+    new_aiding_data_log |= ilab_ext_data.new_aiding_data;
+    new_aiding_data2_log |= ilab_ext_data.new_aiding_data2;
 
     log_counter++;
 
@@ -661,6 +669,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ilab_sensors_data_avr.pressure /= n_avr;
         ilab_sensors_data_avr.diff_press /= n_avr;
         ilab_sensors_data_avr.temperature /= n_avr;
+        ilab_sensors_data_avr.supply_voltage /= n_avr;
 
         ilab_ins_data_avr.yaw /= n_avr;
         ilab_ins_data_avr.pitch /= n_avr;
@@ -771,10 +780,32 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     static_cast<double>(ilab_ins_data_avr.longitude)*1.0e-7f,
                                     static_cast<float>(ilab_ins_data_avr.altitude)*0.01f);
 
+        // @LoggerMessage: ILB9
+        // @Description: InertialLabs service data
+        // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
+        // @Field: USW: Unit Status Word
+        // @Field: USW2: Unit Status Word 2
+        // @Field: ADU: Air Data Unit status
+        // @Field: ISS: INS Navigation (Solution) Status
+        // @Field: NAD1: New Aiding Data
+        // @Field: NAD2: New Aiding Data 2
+        // @Field: Vdc: Supply voltage
+
+        AP::logger().WriteStreaming("ILB9", "TimeUS,IMS,USW,USW2,ADU,ISS,NAD1,NAD2,Vdc",
+                                    "s-------v",
+                                    "F--------",
+                                    "QIHHHBHHf",
+                                    now_us, ilab_ins_data.ms_tow, ilab_ins_data_avr.unit_status, ilab_ins_data_avr.unit_status2,
+                                    ilab_ins_data_avr.air_data_status, ilab_ins_data_avr.ins_sol_status,
+                                    new_aiding_data_log, new_aiding_data2_log, ilab_sensors_data_avr.supply_voltage);
+
         ilab_sensors_data_avr = {};
         ilab_ins_data_avr = {};
         lat_int64_t = 0;
         lon_int64_t = 0;
+        new_aiding_data_log = 0;
+        new_aiding_data2_log = 0;
         log_counter = 0;
     }
 
@@ -923,26 +954,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     static_cast<float>(ilab_ext_data.ext_wind_data.e_std_wind)*0.5144f*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_wind_data.n_std_wind)*0.5144f*0.01f);
     }
-
-    // @LoggerMessage: ILB9
-    // @Description: InertialLabs service data
-    // @Field: TimeUS: Time since system startup
-    // @Field: IMS: GPS INS time (round)
-    // @Field: USW: Unit Status Word
-    // @Field: USW2: Unit Status Word 2
-    // @Field: ADU: Air Data Unit status
-    // @Field: ISS: INS Navigation (Solution) Status
-    // @Field: NAD1: New Aiding Data
-    // @Field: NAD2: New Aiding Data 2
-    // @Field: Vdc: Supply voltage
-
-    AP::logger().WriteStreaming("ILB9", "TimeUS,IMS,USW,USW2,ADU,ISS,NAD1,NAD2,Vdc",
-                                "s-------v",
-                                "F--------",
-                                "QIHHHBHHf",
-                                now_us, ilab_ins_data.ms_tow, ilab_ins_data.unit_status, ilab_ins_data.unit_status2,
-                                ilab_ins_data.air_data_status, ilab_ins_data.ins_sol_status,
-                                ilab_ext_data.new_aiding_data, ilab_ext_data.new_aiding_data2, ilab_sensors_data.supply_voltage);
 
 #endif  // HAL_LOGGING_ENABLED
 
