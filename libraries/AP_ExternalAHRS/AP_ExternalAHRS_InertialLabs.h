@@ -367,6 +367,8 @@ private:
 
     ILAB_SENSORS_DATA ilab_sensors_data_avr;
     ILAB_INS_DATA ilab_ins_data_avr;
+    int64_t lat_int64_t = 0;
+    int64_t lon_int64_t = 0;
 
    struct {
         uint16_t unit_status;

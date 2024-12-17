@@ -641,8 +641,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     ilab_ins_data_avr.pitch += ilab_ins_data.pitch;
     ilab_ins_data_avr.roll += ilab_ins_data.roll;
 
-    ilab_ins_data_avr.latitude += ilab_ins_data.latitude;
-    ilab_ins_data_avr.longitude += ilab_ins_data.longitude;
+    lat_int64_t += ilab_ins_data.latitude;
+    lon_int64_t += ilab_ins_data.longitude;
     ilab_ins_data_avr.altitude += ilab_ins_data.altitude;
     ilab_ins_data_avr.velocity += ilab_ins_data.velocity;
 
@@ -666,8 +666,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ilab_ins_data_avr.pitch /= n_avr;
         ilab_ins_data_avr.roll /= n_avr;
 
-        ilab_ins_data_avr.latitude /= n_avr;
-        ilab_ins_data_avr.longitude /= n_avr;
+        ilab_ins_data_avr.latitude = lat_int64_t / n_avr;
+        ilab_ins_data_avr.longitude = lon_int64_t / n_avr;
         ilab_ins_data_avr.altitude /= n_avr;
         ilab_ins_data_avr.velocity /= n_avr;
 
@@ -773,6 +773,8 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
 
         ilab_sensors_data_avr = {};
         ilab_ins_data_avr = {};
+        lat_int64_t = 0;
+        lon_int64_t = 0;
         log_counter = 0;
     }
 
