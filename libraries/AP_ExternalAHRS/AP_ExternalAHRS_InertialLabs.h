@@ -369,6 +369,8 @@ private:
     ILAB_INS_DATA ilab_ins_data_avr;
     int64_t lat_int64_t = 0;
     int64_t lon_int64_t = 0;
+    uint16_t new_aiding_data_log = 0;
+    uint16_t new_aiding_data2_log = 0;
 
    struct {
         uint16_t unit_status;
