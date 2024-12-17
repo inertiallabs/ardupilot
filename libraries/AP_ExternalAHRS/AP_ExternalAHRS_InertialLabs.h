@@ -372,6 +372,15 @@ private:
     uint16_t new_aiding_data_log = 0;
     uint16_t new_aiding_data2_log = 0;
 
+    struct {
+        int16_t gyroX;
+        int16_t gyroY;
+        int16_t gyroZ;
+        int16_t accX;
+        int16_t accY;
+        int16_t accZ;
+    } ilab_sensor_bias_avr;
+
    struct {
         uint16_t unit_status;
         uint16_t unit_status2;

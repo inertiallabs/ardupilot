@@ -660,6 +660,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     new_aiding_data_log |= ilab_ext_data.new_aiding_data;
     new_aiding_data2_log |= ilab_ext_data.new_aiding_data2;
 
+    ilab_sensor_bias_avr.gyroX += ilab_ins_data.sensor_bias.gyroX;
+    ilab_sensor_bias_avr.gyroY += ilab_ins_data.sensor_bias.gyroY;
+    ilab_sensor_bias_avr.gyroZ += ilab_ins_data.sensor_bias.gyroZ;
+    ilab_sensor_bias_avr.accX += ilab_ins_data.sensor_bias.accX;
+    ilab_sensor_bias_avr.accY += ilab_ins_data.sensor_bias.accY;
+    ilab_sensor_bias_avr.accZ += ilab_ins_data.sensor_bias.accZ;
+
     log_counter++;
 
     if (log_counter >= n_avr) {
@@ -685,6 +692,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         ilab_ins_data_avr.calibrated_airspeed /= n_avr;
         ilab_ins_data_avr.wind_speed /= n_avr;
         ilab_ins_data_avr.airspeed_sf /= n_avr;
+
+        ilab_sensor_bias_avr.gyroX /= n_avr;
+        ilab_sensor_bias_avr.gyroY /= n_avr;
+        ilab_sensor_bias_avr.gyroZ /= n_avr;
+        ilab_sensor_bias_avr.accX /= n_avr;
+        ilab_sensor_bias_avr.accY /= n_avr;
+        ilab_sensor_bias_avr.accZ /= n_avr;
 
         // @LoggerMessage: ILB1
         // @Description: InertialLabs IMU and Mag data
@@ -725,12 +739,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     "F-------",
                                     "QIffffff",
                                     now_us, ilab_ins_data.ms_tow,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroY)*2.0f*1.0e-4f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroX)*2.0f*1.0e-4f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.gyroZ)*2.0f*1.0e-4f*(-1.0f),
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accY)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accX)*2.0f*1.0e-5f,
-                                    static_cast<float>(ilab_ins_data.sensor_bias.accZ)*2.0f*1.0e-5f*(-1.0f));
+                                    static_cast<float>(ilab_sensor_bias_avr.gyroY)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_sensor_bias_avr.gyroX)*2.0f*1.0e-4f,
+                                    static_cast<float>(ilab_sensor_bias_avr.gyroZ)*2.0f*1.0e-4f*(-1.0f),
+                                    static_cast<float>(ilab_sensor_bias_avr.accY)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_sensor_bias_avr.accX)*2.0f*1.0e-5f,
+                                    static_cast<float>(ilab_sensor_bias_avr.accZ)*2.0f*1.0e-5f*(-1.0f));
 
         // @LoggerMessage: ILB2
         // @Description: InertialLabs ADC data
