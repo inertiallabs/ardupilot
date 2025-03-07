@@ -481,6 +481,12 @@ const char* AP_ExternalAHRS::get_name() const
     return nullptr;
 }
 
+void AP_ExternalAHRS::set_gnss_disable(bool disable) {
+    gnss_is_disabled = disable;
+    handle_command(disable ? ExternalAHRS_command::DISABLE_GNSS : ExternalAHRS_command::ENABLE_GNSS,
+                   ExternalAHRS_command_data{});
+}
+
 namespace AP {
 
 AP_ExternalAHRS &externalAHRS()
