@@ -193,9 +193,7 @@ public:
     } airspeed_data_message_t;
 
     // set GNSS disable for auxillary function GPS_DISABLE
-    void set_gnss_disable(bool disable) {
-        gnss_is_disabled = disable;
-    }
+    void set_gnss_disable(bool disable);
 
     // check if a sensor type is enabled
     bool has_sensor(AvailableSensor sensor) const {
