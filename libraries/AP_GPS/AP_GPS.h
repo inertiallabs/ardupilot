@@ -297,7 +297,7 @@ public:
         if (instance >= GPS_MAX_INSTANCES) {
             return NO_GPS;
         }
-        if (_force_disable_gps && state[instance].status > NO_FIX) {
+        if (_force_disable_gps && (state[instance].status > NO_FIX) && (get_type(instance) != GPS_TYPE_EXTERNAL_AHRS)) {
             return NO_FIX;
         }
         return state[instance].status;
