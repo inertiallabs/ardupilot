@@ -4413,6 +4413,27 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg)
     }
 }
 
+// handle GPS_INPUT message for GPS and External AHRS
+void GCS_MAVLINK::handle_gps_input_message(const mavlink_message_t &msg) const
+{
+#if AP_GPS_ENABLED
+    AP::gps().handle_msg(chan, msg);
+#endif
+#if AP_EXTERNAL_AHRS_ENABLED && AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
+    mavlink_gps_input_t packet;
+    mavlink_msg_gps_input_decode(&msg, &packet);
+    ExternalAHRS_command_data data;
+    data.x = packet.lat;
+    data.y = packet.lon;
+    data.param1 = 0.0f;
+    data.param2 = 0.0f;
+    data.param3 = 0.0f;
+    data.param4 = 0.0f;
+    data.z = 0.0f;
+    AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION, data);
+#endif
+}
+
 /*
   handle messages which don't require vehicle specific data
  */
@@ -4563,9 +4584,12 @@ void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
         break;
 #endif
 
+    case MAVLINK_MSG_ID_GPS_INPUT:
+        handle_gps_input_message(msg);
+        break;
+
 #if AP_GPS_ENABLED
     case MAVLINK_MSG_ID_GPS_RTCM_DATA:
-    case MAVLINK_MSG_ID_GPS_INPUT:
     case MAVLINK_MSG_ID_GPS_INJECT_DATA:
         AP::gps().handle_msg(chan, msg);
         break;
