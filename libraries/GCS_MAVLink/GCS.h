@@ -597,6 +597,8 @@ protected:
     void handle_serial_control(const mavlink_message_t &msg);
     void handle_vision_position_delta(const mavlink_message_t &msg);
 
+    void handle_gps_input_message(const mavlink_message_t &msg) const;
+
     virtual void handle_message(const mavlink_message_t &msg);
     void handle_set_gps_global_origin(const mavlink_message_t &msg);
     void handle_setup_signing(const mavlink_message_t &msg) const;
