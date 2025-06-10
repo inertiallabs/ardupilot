@@ -44,4 +44,3 @@ bool AP_ExternalAHRS_backend::in_fly_forward(void) const
 }
 
 #endif  // AP_EXTERNAL_AHRS_ENABLED
-

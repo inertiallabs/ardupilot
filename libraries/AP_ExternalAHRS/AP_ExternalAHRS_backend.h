@@ -79,10 +79,9 @@ protected:
     const float vel_gate_scale = 0.2;
     const float pos_gate_scale = 0.2;
     const float hgt_gate_scale = 0.2;
-    
+
 private:
     AP_ExternalAHRS &frontend;
 };
 
 #endif  // AP_EXTERNAL_AHRS_ENABLED
-
