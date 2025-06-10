@@ -23,6 +23,7 @@
 #if AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
 
 #include "AP_ExternalAHRS_backend.h"
+#include "AP_ExternalAHRS_InertialLabs_message_list.h"
 
 class AP_ExternalAHRS_InertialLabs : public AP_ExternalAHRS_backend {
 
@@ -38,6 +39,10 @@ public:
     bool pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const override;
     void get_filter_status(nav_filter_status &status) const override;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const override;
+    void write_bytes(const char *bytes, uint8_t len) override;
+    void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) override;
+    bool get_wind_estimation(Vector3f &wind) override;
+    void send_eahrs_status_flag(class GCS_MAVLINK &link) const override;
 
     // check for new data
     void update() override {
@@ -56,32 +61,42 @@ public:
         GYRO_DATA_HR = 0x21,
         BARO_DATA = 0x25,
         MAG_DATA = 0x24,
+        SENSOR_BIAS = 0x26,
         ORIENTATION_ANGLES = 0x07,
         VELOCITIES = 0x12,
         POSITION = 0x10,
-        KF_VEL_COVARIANCE = 0x58,
-        KF_POS_COVARIANCE = 0x57,
         UNIT_STATUS = 0x53,
         GNSS_EXTENDED_INFO = 0x4A,
-        NUM_SATS = 0x3B,
         GNSS_POSITION = 0x30,
         GNSS_VEL_TRACK = 0x32,
         GNSS_POS_TIMESTAMP = 0x3E,
-        GNSS_INFO_SHORT = 0x36,
         GNSS_NEW_DATA = 0x41,
         GNSS_JAM_STATUS = 0xC0,
         DIFFERENTIAL_PRESSURE = 0x28,
         TRUE_AIRSPEED = 0x86,
+        CALIBRATED_AIRSPEED = 0x85,
         WIND_SPEED = 0x8A,
         AIR_DATA_STATUS = 0x8D,
         SUPPLY_VOLTAGE = 0x50,
         TEMPERATURE = 0x52,
         UNIT_STATUS2 = 0x5A,
-        GNSS_ANGLES = 0x33,
-        GNSS_ANGLE_POS_TYPE = 0x3A,
-        GNSS_HEADING_TIMESTAMP = 0x40,
         GNSS_DOP = 0x42,
         INS_SOLUTION_STATUS = 0x54,
+        INS_POS_VEL_ACCURACY = 0x5F,
+        FULL_SAT_INFO = 0x37,
+        GNSS_VEL_LATENCY = 0x3D,
+        GNSS_SOL_STATUS = 0x38,
+        GNSS_POS_VEL_TYPE = 0x39,
+        NEW_AIDING_DATA = 0x65,
+        NEW_AIDING_DATA2 = 0xA1,
+        EXT_SPEED = 0x61,
+        EXT_HOR_POS = 0x6E,
+        EXT_ALT = 0x6C,
+        EXT_HEADING = 0x66,
+        EXT_AMBIENT_DATA = 0x6B,
+        EXT_WIND_DATA = 0x62,
+        MAG_CLB_ACCURACY = 0x9A,
+        DOPPLER_VELOCITY_LOG = 0X67,
     };
 
     /*
@@ -104,38 +119,103 @@ public:
             return Vector3f(x,y,z);
         }
     };
+
     struct PACKED vec3_32_t {
         int32_t x,y,z;
         Vector3f tofloat(void) {
             return Vector3f(x,y,z);
         }
     };
-    struct PACKED vec3_u8_t {
-        uint8_t x,y,z;
-        Vector3f tofloat(void) {
-            return Vector3f(x,y,z);
-        }
-    };
-    struct PACKED vec3_u16_t {
-        uint16_t x,y,z;
-        Vector3f tofloat(void) {
-            return Vector3f(x,y,z);
-        }
+
+    struct PACKED sensor_bias_t {
+        int8_t gyroX; // deg/s*0.5*1e5
+        int8_t gyroY; // deg/s*0.5*1e5
+        int8_t gyroZ; // deg/s*0.5*1e5
+        int8_t accX; // g*0.5*1e6
+        int8_t accY; // g*0.5*1e6
+        int8_t accZ; // g*0.5*1e6
+        int8_t reserved;
     };
 
-    struct gnss_extended_info_t {
+    struct PACKED gnss_extended_info_t {
         uint8_t fix_type;
         uint8_t spoofing_status;
     };
 
-    struct gnss_info_short_t {
-        uint8_t info1;
-        uint8_t info2;
+    struct PACKED full_sat_info_t {
+        uint8_t SVs;
+        uint8_t SolnSVs;
+        uint8_t SolnL1SVs;
+        uint8_t SolnMultiSVs;
+        uint8_t signal_used1;
+        uint8_t signal_used2;
+        uint8_t GPS_time_status;
+        uint8_t ext_sol_status;
     };
-    
+
+    struct PACKED gnss_dop_t {
+        uint16_t gdop; // *1000
+        uint16_t pdop; // *1000
+        uint16_t hdop; // *1000
+        uint16_t vdop; // *1000
+        uint16_t tdop; // *1000
+    };
+
+    struct PACKED ins_accuracy_t {
+        int32_t lat; // m*1000
+        int32_t lon; // m*1000
+        int32_t alt; // m*1000
+        int32_t east_vel; // m/s*1000
+        int32_t north_vel; // m/s*1000
+        int32_t ver_vel; // m/s*1000
+    };
+
+    struct PACKED ext_hor_pos_t {
+        int32_t lat; // deg*1.0e7
+        int32_t lon; // deg*1.0e7
+        uint16_t lat_std; // m*100
+        uint16_t lon_std; // m*100
+        uint16_t pos_latency; // sec*1000
+    };
+
+    struct PACKED ext_alt_t {
+        int32_t alt; // m*1000
+        uint16_t alt_std; // m*100
+    };
+
+    struct PACKED ext_heading_t {
+        uint16_t heading; // deg*100
+        uint16_t std; // deg*100
+        uint16_t latency; // sec*1000
+    };
+
+    struct PACKED ext_ambient_data_t {
+        int16_t air_temp; // degC*10
+        int32_t alt; // m*100
+        uint16_t abs_press; // Pa/2
+    };
+
+    struct PACKED ext_wind_data_t {
+        int16_t n_wind_vel; // kt*100
+        int16_t e_wind_vel; // kt*100
+        uint16_t n_std_wind; // kt*100
+        uint16_t e_std_wind; // kt*100
+    };
+
+    struct PACKED doppler_velocity_log_data_t {
+        int32_t lateral_vel; // m/sec*1000
+        int32_t forward_vel; // m/sec*1000
+        int32_t vertical_vel; // m/sec*1000
+        uint16_t lateral_vel_std; // m/sec*1000
+        uint16_t forward_vel_std; // m/sec*1000
+        uint16_t vertical_vel_std; // m/sec*1000
+        uint16_t vel_latency; // ms
+        int32_t reserved;
+    };
+
     union PACKED ILabsData {
-        uint32_t gnss_time_ms; // ms since start of GNSS week
-        uint16_t gnss_week;
+        uint32_t gps_time_ms; // ms since start of GPS week
+        uint16_t gps_week;
         vec3_32_t accel_data_hr; // g * 1e6
         vec3_32_t gyro_data_hr; // deg/s * 1e5
         struct PACKED {
@@ -143,6 +223,7 @@ public:
             int32_t baro_alt; // meters*100
         } baro_data;
         vec3_16_t mag_data; // nT/10
+        sensor_bias_t sensor_bias;
         struct PACKED {
             uint16_t yaw; // deg*100
             int16_t pitch; // deg*100
@@ -154,11 +235,8 @@ public:
             int32_t lon; // deg*1e7
             int32_t alt; // m*100, AMSL
         } position;
-        vec3_u8_t kf_vel_covariance; // mm/s
-        vec3_u16_t kf_pos_covariance; // mm
         uint16_t unit_status; // set ILABS_UNIT_STATUS_*
         gnss_extended_info_t gnss_extended_info;
-        uint8_t num_sats;
         struct PACKED {
             int32_t lat; // deg*1e7
             int32_t lon; // deg*1e7
@@ -170,30 +248,33 @@ public:
             int32_t ver_speed; // m/s*100
         } gnss_vel_track;
         uint32_t gnss_pos_timestamp; // ms
-        gnss_info_short_t gnss_info_short;
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
+        doppler_velocity_log_data_t doppler_velocity_log;
         int32_t differential_pressure; // mbar*1e4
         int16_t true_airspeed; // m/s*100
+        int16_t calibrated_airspeed; // m/s*100
         vec3_16_t wind_speed; // m/s*100
         uint16_t air_data_status;
         uint16_t supply_voltage; // V*100
         int16_t temperature; // degC*10
         uint16_t unit_status2;
-        struct PACKED {
-            uint16_t heading; // deg*100
-            int16_t pitch; // deg*100
-        } gnss_angles;
-        uint8_t gnss_angle_pos_type;
-        uint32_t gnss_heading_timestamp; // ms
-        struct PACKED {
-            uint16_t gdop;
-            uint16_t pdop;
-            uint16_t hdop;
-            uint16_t vdop;
-            uint16_t tdop;
-        } gnss_dop; // 10e3
+        gnss_dop_t gnss_dop;
         uint8_t ins_sol_status;
+        ins_accuracy_t ins_accuracy;
+        full_sat_info_t full_sat_info;
+        uint16_t gnss_vel_latency;
+        uint8_t gnss_sol_status;
+        uint8_t gnss_pos_vel_type;
+        uint16_t new_aiding_data;
+        uint16_t new_aiding_data2;
+        int16_t external_speed;
+        ext_hor_pos_t ext_hor_pos;
+        ext_alt_t ext_alt;
+        ext_heading_t ext_heading;
+        ext_ambient_data_t ext_ambient_air_data;
+        ext_wind_data_t ext_wind_data;
+        uint8_t mag_clb_accuracy; // deg*10
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -203,10 +284,10 @@ public:
     AP_ExternalAHRS::airspeed_data_message_t airspeed_data;
 
     uint16_t buffer_ofs;
-    uint8_t buffer[256]; // max for normal message set is 167+8
+    uint8_t buffer[512]; // payload is 218 bytes, full message is 264 bytes
+    uint8_t tx_buffer[64];
 
 protected:
-
     uint8_t num_gps_sensors(void) const override {
         return 1;
     }
@@ -220,6 +301,9 @@ private:
     void update_thread();
     bool check_uart();
     bool check_header(const ILabsHeader *h) const;
+    uint16_t get_num_points_to_dec(const uint16_t &rate) const;
+    void send_EAHRS_status_msg(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg);
+    void make_tx_packet(uint8_t *packet) const;
 
     // re-sync on header bytes
     void re_sync(void);
@@ -229,54 +313,94 @@ private:
         uint8_t length;
     } message_lengths[];
 
-    struct {
-        float baro_alt;
-        Vector3f kf_vel_covariance;
-        Vector3f kf_pos_covariance;
-        uint16_t unit_status;
-        uint16_t unit_status2;
-        float differential_pressure;
-        float true_airspeed;
-        Vector3f wind_speed;
-        uint16_t air_data_status;
+    struct ILAB_SENSORS_DATA {
+        Vector3f accel;
+        Vector3f gyro;
+        Vector3f mag;
+        float pressure;
+        float diff_press;
+        float temperature;
         float supply_voltage;
-        uint8_t ins_sol_status;
-    } state2;
+    };
 
-    struct {
-        float lat;
-        float lng;
-        float alt;
+    struct ILAB_GPS_DATA {
+        uint32_t ms_tow;
+        uint16_t gps_week;
+        int32_t latitude;
+        int32_t longitude;
+        int32_t altitude;
         float hor_speed;
         float ver_speed;
         float track_over_ground;
+        gnss_dop_t dop;
         uint8_t new_data;
-        uint32_t pos_timestamp;
-        uint32_t heading_timestamp;
+        uint8_t fix_type;
         uint8_t spoof_status;
         uint8_t jam_status;
-        uint8_t angle_pos_type;
-        gnss_info_short_t info_short;
-        float heading;
+        full_sat_info_t full_sat_info;
+        uint16_t vel_latency;
+        uint8_t gnss_sol_status;
+        uint8_t gnss_pos_vel_type;
+    };
+
+    struct ILAB_INS_DATA{
+        float yaw;
         float pitch;
-        float gdop;
-        float pdop;
-        float tdop;
-    } gnss_data;
+        float roll;
+        uint32_t ms_tow;
+        int32_t latitude;
+        int32_t longitude;
+        int32_t altitude;
+        Vector3f velocity;
+        uint16_t unit_status;
+        uint16_t unit_status2;
+        uint8_t ins_sol_status;
+        ins_accuracy_t ins_accuracy;
+        float baro_alt;
+        float true_airspeed;
+        float calibrated_airspeed;
+        Vector3f wind_speed;
+        float airspeed_sf;
+        uint16_t air_data_status;
+        sensor_bias_t sensor_bias;
+        uint8_t mag_clb_accuracy;
+    };
 
-    uint16_t last_unit_status;
-    uint16_t last_unit_status2;
-    uint16_t last_air_data_status;
-    uint8_t last_spoof_status;
-    uint8_t last_jam_status;
+    struct ILAB_EXT_DATA {
+        uint16_t new_aiding_data;
+        uint16_t new_aiding_data2;
+        int16_t external_speed;
+        ext_hor_pos_t ext_hor_pos;
+        ext_alt_t ext_alt;
+        ext_heading_t ext_heading;
+        ext_ambient_data_t ext_ambient_air_data;
+        ext_wind_data_t ext_wind_data;
+        doppler_velocity_log_data_t doppler_velocity_log;
+    };
 
-    uint32_t last_critical_msg_ms;
+    ILAB_SENSORS_DATA ilab_sensors_data;
+    ILAB_GPS_DATA ilab_gps_data;
+    ILAB_INS_DATA ilab_ins_data;
+    ILAB_EXT_DATA ilab_ext_data;
+
+   struct {
+        uint16_t unit_status;
+        uint16_t unit_status2;
+        uint16_t air_data_status;
+        uint8_t spoof_status;
+        uint8_t jam_status;
+        uint8_t ins_sol_status;
+        uint8_t mag_clb_status;
+        uint8_t mag_clb_accuracy;
+    } last_ins_status;
 
     uint32_t last_att_ms;
     uint32_t last_vel_ms;
     uint32_t last_pos_ms;
     uint32_t last_gps_ms;
+    uint32_t startMagAcc_ms;
+
+    uint16_t tx_counter = 0;
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
-
