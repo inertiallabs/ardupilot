@@ -75,6 +75,10 @@
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Vehicle/AP_Vehicle_config.h>
 
+#if AP_EXTERNAL_AHRS_BACKEND_DEFAULT_ENABLED
+#include <AP_ExternalAHRS/AP_ExternalAHRS.h>
+#endif
+
 #include <stdio.h>
 
 #if AP_RADIO_ENABLED
@@ -3211,6 +3215,67 @@ MAV_RESULT GCS_MAVLINK::handle_command_request_message(const mavlink_command_int
     return MAV_RESULT_ACCEPTED;
 }
 
+MAV_RESULT GCS_MAVLINK::handle_externalAHRS_message(const mavlink_command_int_t &packet)
+{
+#if HAL_EXTERNAL_AHRS_ENABLED
+    switch (packet.command) {
+        case MAV_CMD_EXTERNAL_AHRS_START_UDD:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::START_UDD,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_STOP:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::STOP,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_ENABLE_GNSS:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::ENABLE_GNSS,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_DISABLE_GNSS:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::DISABLE_GNSS,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_START_VG3D_CALIBRATION_IN_FLIGHT:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::START_VG3D_CALIBRATION_IN_FLIGHT,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_STOP_VG3D_CALIBRATION_IN_FLIGHT:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::STOP_VG3D_CALIBRATION_IN_FLIGHT,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_POSITION:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_POSITION,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_ALTITUDE:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_ALTITUDE,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_WIND:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_WIND,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_AMBIENT_AIR:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_AMBIENT_AIR,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+
+        default:
+            return MAV_RESULT_FAILED;
+    }
+#else
+    return MAV_RESULT_FAILED;
+#endif
+}
+
 bool GCS_MAVLINK::get_ap_message_interval(ap_message id, uint16_t &interval_ms) const
 {
     // check if it's a specially-handled message:
@@ -5628,6 +5693,22 @@ MAV_RESULT GCS_MAVLINK::handle_command_int_packet(const mavlink_command_int_t &p
 
     case MAV_CMD_REQUEST_MESSAGE:
         return handle_command_request_message(packet);
+
+#if AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
+    case MAV_CMD_EXTERNAL_AHRS_START_UDD:
+    case MAV_CMD_EXTERNAL_AHRS_STOP:
+    case MAV_CMD_EXTERNAL_AHRS_ENABLE_GNSS:
+    case MAV_CMD_EXTERNAL_AHRS_DISABLE_GNSS:
+    case MAV_CMD_EXTERNAL_AHRS_START_VG3D_CALIBRATION_IN_FLIGHT:
+    case MAV_CMD_EXTERNAL_AHRS_STOP_VG3D_CALIBRATION_IN_FLIGHT:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_POSITION:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HORIZONTAL_POSITION:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_ALTITUDE:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_WIND:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_AMBIENT_AIR:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
+        return handle_externalAHRS_message(packet);
+#endif
 
     }
 
