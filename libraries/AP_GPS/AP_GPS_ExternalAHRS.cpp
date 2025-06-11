@@ -69,9 +69,15 @@ void AP_GPS_ExternalAHRS::handle_external(const AP_ExternalAHRS::gps_data_messag
     state.have_vertical_accuracy = true;
     state.have_vertical_velocity = true;
 
-    state.horizontal_accuracy = pkt.horizontal_pos_accuracy;
-    state.vertical_accuracy = pkt.vertical_pos_accuracy;
-    state.speed_accuracy = pkt.horizontal_vel_accuracy;
+    state.latitude_raw = pkt.latitude_raw;
+    state.longitude_raw = pkt.longitude_raw;
+    state.altitude_raw = pkt.altitude_raw;
+    state.track_over_ground_raw = pkt.track_over_ground_raw;
+    state.gps_raw_status = pkt.gps_raw_status;
+
+    state.ins_lat_accuracy = pkt.ins_lat_accuracy;
+    state.ins_lng_accuracy = pkt.ins_lng_accuracy;
+    state.ins_alt_accuracy = pkt.ins_alt_accuracy;
 
     state.last_gps_time_ms = AP_HAL::millis();
 

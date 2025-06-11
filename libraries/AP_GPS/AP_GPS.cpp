@@ -1399,6 +1399,17 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         sacc * 1000,          // one-sigma standard deviation in mm/s
         0,                    // TODO one-sigma heading accuracy standard deviation
         gps_yaw_cdeg(0));
+
+    mavlink_msg_ahrs_additional_raw_info_send(
+        chan,
+        state[0].latitude_raw,           // in 1E7 degrees
+        state[0].longitude_raw,          // in 1E7 degrees
+        state[0].altitude_raw * 10UL,    // mm
+        state[0].track_over_ground_raw,  // deg*100
+        state[0].gps_raw_status,
+        state[0].ins_lat_accuracy,       // m*1000
+        state[0].ins_lng_accuracy,       // m*1000
+        state[0].ins_alt_accuracy);      // m*1000
 }
 
 #if GPS_MAX_RECEIVERS > 1
