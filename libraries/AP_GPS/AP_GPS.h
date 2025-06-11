@@ -241,6 +241,16 @@ public:
         float relPosD;                     ///< Reported Vertical distance in meters
         float accHeading;                  ///< Reported Heading Accuracy in degrees
         uint32_t relposheading_ts;        ///< True if new data has been received since last time it was false
+
+        // Raw sensor data
+        int32_t latitude_raw;            ///< deg*1.0e7
+        int32_t longitude_raw;           ///< deg*1.0e7
+        int32_t altitude_raw;              ///< mm
+        int32_t track_over_ground_raw;   ///< ground course in degrees*100, wrapped 0-360
+        uint8_t gps_raw_status;          ///< statuses of GPS module. 0 is OK
+        uint32_t ins_lat_accuracy;         ///< m*1000
+        uint32_t ins_lng_accuracy;         ///< m*1000
+        uint32_t ins_alt_accuracy;         ///< m*1000
     };
 
     /// Startup initialisation.
@@ -284,6 +294,9 @@ public:
 
     /// Query GPS status
     GPS_Status status(uint8_t instance) const {
+        if (instance >= GPS_MAX_INSTANCES) {
+            return NO_GPS;
+        }
         if (_force_disable_gps && state[instance].status > NO_FIX) {
             return NO_FIX;
         }
