@@ -74,7 +74,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     }
 
     if (!plane.training_manual_pitch || !plane.training_manual_roll) {
-        _base_mode |= MAV_MODE_FLAG_STABILIZE_ENABLED;        
+        _base_mode |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
 
     if (plane.control_mode != &plane.mode_manual && plane.control_mode != &plane.mode_initializing) {
@@ -157,7 +157,7 @@ void GCS_MAVLINK_Plane::send_attitude() const
         omega.z);
 }
 
-void GCS_MAVLINK_Plane::send_attitude_target() 
+void GCS_MAVLINK_Plane::send_attitude_target()
 {
 #if HAL_QUADPLANE_ENABLED
     // Check if the attitude target is valid for reporting
@@ -172,7 +172,7 @@ void GCS_MAVLINK_Plane::send_attitude_target()
 
     const float quat_out[4] {quat.q1, quat.q2, quat.q3, quat.q4};
 
-    const uint16_t typemask = 0; 
+    const uint16_t typemask = 0;
 
     mavlink_msg_attitude_target_send(
         chan,
@@ -184,7 +184,7 @@ void GCS_MAVLINK_Plane::send_attitude_target()
         ang_vel.z,              // bodyframe yaw rate (rad/s)
         throttle);              // Collective thrust, normalized to 0 .. 1
 
-#endif // HAL_QUADPLANE_ENABLED 
+#endif // HAL_QUADPLANE_ENABLED
 }
 
 void GCS_MAVLINK_Plane::send_aoa_ssa()
@@ -477,7 +477,7 @@ void GCS_MAVLINK_Plane::send_hygrometer()
     const auto *airspeed = AP::airspeed();
     if (airspeed == nullptr) {
         return;
-    } 
+    }
     const uint32_t now = AP_HAL::millis();
 
     for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
@@ -929,7 +929,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
          // no need to process any new packet/s with the
          //  same airspeed any further, if we are already doing it.
         float new_target_airspeed_cm = packet.param2 * 100;
-        if ( is_equal(new_target_airspeed_cm,plane.guided_state.target_airspeed_cm)) { 
+        if ( is_equal(new_target_airspeed_cm,plane.guided_state.target_airspeed_cm)) {
             return MAV_RESULT_ACCEPTED;
         }
         plane.guided_state.target_airspeed_cm = new_target_airspeed_cm;
@@ -968,7 +968,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
         plane.guided_state.target_mav_frame = packet.frame;
 
         const int32_t new_target_alt_cm = packet.z * 100;
-        plane.guided_state.target_location.set_alt_cm(new_target_alt_cm, new_target_alt_frame); 
+        plane.guided_state.target_location.set_alt_cm(new_target_alt_cm, new_target_alt_frame);
         plane.guided_state.target_alt_time_ms = AP_HAL::millis();
 
         // param3 contains the desired vertical velocity (not acceleration)
@@ -1127,7 +1127,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_packet(const mavlink_command_in
         plane.handle_external_hagl(packet);
         return MAV_RESULT_ACCEPTED;
 #endif
-        
+
     default:
         return GCS_MAVLINK::handle_command_int_packet(packet, msg);
     }
@@ -1572,4 +1572,3 @@ MAV_LANDED_STATE GCS_MAVLINK_Plane::landed_state() const
 
     return MAV_LANDED_STATE_ON_GROUND;
 }
-
