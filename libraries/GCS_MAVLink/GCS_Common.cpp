@@ -1207,6 +1207,9 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
         { MAVLINK_MSG_ID_FLIGHT_INFORMATION, MSG_FLIGHT_INFORMATION},
 #endif
+#if AP_AHRS_ENABLED
+        { MAVLINK_MSG_ID_EAHRS_STATUS_INFO, MSG_EAHRS_STATUS_INFO},
+#endif  // AP_AHRS_ENABLED
     };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -6601,6 +6604,12 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
         AP::ahrs().send_ekf_status_report(*this);
         break;
+#if AP_AHRS_EXTERNAL_ENABLED
+    case MSG_EAHRS_STATUS_INFO:
+        CHECK_PAYLOAD_SIZE(EAHRS_STATUS_INFO);
+        AP::externalAHRS().send_eahrs_status_flag(*this);
+        break;
+#endif
 #endif
 
     case MSG_MEMINFO:
