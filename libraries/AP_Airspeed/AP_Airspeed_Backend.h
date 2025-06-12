@@ -51,6 +51,7 @@ public:
     virtual void handle_msp(const MSP::msp_airspeed_data_message_t &pkt) {}
 #if AP_AIRSPEED_EXTERNAL_ENABLED
     virtual void handle_external(const AP_ExternalAHRS::airspeed_data_message_t &pkt) {}
+    virtual void set_external_airspeed_enabled(bool &airspeed_enabled) {}
 #endif
 
 #if AP_AIRSPEED_HYGROMETER_ENABLE
