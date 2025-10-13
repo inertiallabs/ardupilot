@@ -468,6 +468,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 ilab_ins_data.mag_clb_accuracy = u.mag_clb_accuracy;
                 break;
             }
+            case MessageType::DOPPLER_VELOCITY_LOG: {
+                CHECK_SIZE(u.doppler_velocity_log);
+                ilab_ext_data.doppler_velocity_log = u.doppler_velocity_log;
+                break;
+            }
         }
 
         if (msg_len == 0) {
@@ -892,6 +897,33 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                                     static_cast<float>(ilab_ext_data.ext_wind_data.n_wind_vel)*0.5144f*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_wind_data.e_std_wind)*0.5144f*0.01f,
                                     static_cast<float>(ilab_ext_data.ext_wind_data.n_std_wind)*0.5144f*0.01f);
+    }
+
+    if (ilab_ext_data.new_aiding_data & IL_NewAidingData::NEW_DVL) {
+        // @LoggerMessage: ILBV
+        // @Description: InertialLabs doppler velocity log data
+        // @Field: TimeUS: Time since system startup
+        // @Field: IMS: GPS INS time (round)
+        // @Field: LV: Lateral velocity (m/sec)
+        // @Field: FV: Forward velocity (m/sec)
+        // @Field: VV: Vertical velocity (m/sec)
+        // @Field: LVS: Lateral velocity STD (m/sec)
+        // @Field: FVS: Forward velocity STD (m/sec)
+        // @Field: VVS: Vertical velocity STD (m/sec)
+        // @Field: VL: Velocity latency (ms)
+
+        AP::logger().WriteStreaming("ILBV", "TimeUS,IMS,LV,FV,VV,LVS,FVS,VVS,VL",
+                                    "s-nnnnnn-",
+                                    "F--------",
+                                    "QIffffffI",
+                                    now_us, ilab_ins_data.ms_tow,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.lateral_vel)*1.0e-3,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.forward_vel)*1.0e-3,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.vertical_vel)*1.0e-3,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.lateral_vel_std)*1.0e-3,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.forward_vel_std)*1.0e-3,
+                                    static_cast<float>(ilab_ext_data.doppler_velocity_log.vertical_vel_std)*1.0e-3,
+                                    ilab_ext_data.doppler_velocity_log.vel_latency);
     }
 
 #endif  // HAL_LOGGING_ENABLED

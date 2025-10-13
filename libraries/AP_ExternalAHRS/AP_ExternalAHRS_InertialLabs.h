@@ -96,6 +96,7 @@ public:
         EXT_AMBIENT_DATA = 0x6B,
         EXT_WIND_DATA = 0x62,
         MAG_CLB_ACCURACY = 0x9A,
+        DOPPLER_VELOCITY_LOG = 0X67,
     };
 
     /*
@@ -201,6 +202,17 @@ public:
         uint16_t e_std_wind; // kt*100
     };
 
+    struct PACKED doppler_velocity_log_data_t {
+        int32_t lateral_vel; // m/sec*1000
+        int32_t forward_vel; // m/sec*1000
+        int32_t vertical_vel; // m/sec*1000
+        uint16_t lateral_vel_std; // m/sec*1000
+        uint16_t forward_vel_std; // m/sec*1000
+        uint16_t vertical_vel_std; // m/sec*1000
+        uint16_t vel_latency; // ms
+        int32_t reserved;
+    };
+
     union PACKED ILabsData {
         uint32_t gps_time_ms; // ms since start of GPS week
         uint16_t gps_week;
@@ -238,6 +250,7 @@ public:
         uint32_t gnss_pos_timestamp; // ms
         uint8_t gnss_new_data;
         uint8_t gnss_jam_status;
+        doppler_velocity_log_data_t doppler_velocity_log;
         int32_t differential_pressure; // mbar*1e4
         int16_t true_airspeed; // m/s*100
         int16_t calibrated_airspeed; // m/s*100
@@ -362,6 +375,7 @@ private:
         ext_heading_t ext_heading;
         ext_ambient_data_t ext_ambient_air_data;
         ext_wind_data_t ext_wind_data;
+        doppler_velocity_log_data_t doppler_velocity_log;
     };
 
     ILAB_SENSORS_DATA ilab_sensors_data;
