@@ -88,6 +88,7 @@ enum IL_NewAidingData {
 	NEW_WIND        = (1U << 2),
 	NEW_EXT_POS     = (1U << 3),
 	NEW_HEADING     = (1U << 5),
+	NEW_DVL         = (1U << 6),
 	NEW_AMBIENT     = (1U << 10),
 	NEW_ALTITUDE    = (1U << 11),
 	NEW_EXT_HOR_POS = (1U << 13),
