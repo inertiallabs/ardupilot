@@ -34,6 +34,33 @@ bool AP_Airspeed_External::get_temperature(float &temperature)
     return true;
 }
 
+bool AP_Airspeed_External::has_airspeed()
+{
+    return ext_airspeed_enabled;
+}
+
+bool AP_Airspeed_External::get_airspeed(float &airspeed)
+{
+    WITH_SEMAPHORE(sem);
+    if (airspeed_count == 0) {
+        return false;
+    }
+
+    uint32_t now = AP_HAL::millis();
+
+    airspeed = sum_airspeed/airspeed_count;
+    airspeed_count = 0;
+    sum_airspeed = 0;
+
+    const uint32_t update_timeout = 2000; // ms
+    return (now - last_message_timestamp) < update_timeout;
+}
+
+void AP_Airspeed_External::set_external_airspeed_enabled(bool airspeed_enabled)
+{
+    ext_airspeed_enabled = airspeed_enabled;
+}
+
 void AP_Airspeed_External::handle_external(const AP_ExternalAHRS::airspeed_data_message_t &pkt)
 {
     WITH_SEMAPHORE(sem);
@@ -53,6 +80,16 @@ void AP_Airspeed_External::handle_external(const AP_ExternalAHRS::airspeed_data_
         sum_temperature /= 2;
         temperature_count /= 2;
     }
+
+    sum_airspeed += pkt.airspeed;
+    airspeed_count++;
+    if (airspeed_count > 100) {
+        // prevent overflow
+        sum_airspeed /= 2;
+        airspeed_count /= 2;
+    }
+
+    last_message_timestamp = AP_HAL::millis();
 }
 
 #endif // AP_AIRSPEED_EXTERNAL_ENABLED
