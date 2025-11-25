@@ -192,6 +192,7 @@ public:
         SBG_EKF_AS_GNSS = 1U << 1,
         SENSAITION_INS = 1U << 2,
         ILAB_TRANSMIT_AIRSPEED = 1U << 3, // transmit airspeed to IL INS
+        ILAB_SEND_STATUS = 1U << 4, // send IL INS status messages to GCS
     };
 
 protected:
