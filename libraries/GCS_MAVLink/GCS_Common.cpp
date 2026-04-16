@@ -6310,6 +6310,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_GPS_RAW:
         CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
         AP::gps().send_mavlink_gps_raw(chan);
+        AP::externalAHRS().send_gps_raw_int(*this);
         break;
     case MSG_GPS_RTK:
         CHECK_PAYLOAD_SIZE(GPS_RTK);
