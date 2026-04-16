@@ -406,6 +406,13 @@ void AP_ExternalAHRS::send_eahrs_status_flag(GCS_MAVLINK &link) const
     }
 }
 
+void AP_ExternalAHRS::send_gps_raw_int(GCS_MAVLINK &link) const
+{
+    if (backend) {
+        backend->send_gps_raw_int(link);
+    }
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {

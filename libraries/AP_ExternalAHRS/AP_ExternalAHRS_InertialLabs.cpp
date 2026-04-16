@@ -473,6 +473,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
                 ilab_ext_data.doppler_velocity_log = u.doppler_velocity_log;
                 break;
             }
+            case MessageType::GNSS_POS_VEL_ACCURACY: {
+                CHECK_SIZE(u.gnss_pos_vel_accuracy);
+                ilab_gps_data.gnss_pos_vel_accuracy = u.gnss_pos_vel_accuracy;
+                break;
+            }
         }
 
         if (msg_len == 0) {
@@ -567,12 +572,6 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             gps_data.longitude_raw = ilab_gps_data.longitude;
             gps_data.altitude_raw = ilab_gps_data.altitude;
             gps_data.track_over_ground_raw = static_cast<int32_t>(ilab_gps_data.track_over_ground*100.0f);
-            gps_data.gps_raw_status = ilab_gps_data.gnss_sol_status;
-
-            gps_data.latitude_raw = ilab_gps_data.latitude;
-            gps_data.longitude_raw = ilab_gps_data.longitude;
-            gps_data.altitude_raw = ilab_gps_data.altitude;
-            gps_data.track_over_ground_raw = ilab_gps_data.track_over_ground;
             gps_data.gps_raw_status = ilab_gps_data.gnss_sol_status;
 
             uint8_t instance;
@@ -1286,6 +1285,29 @@ void AP_ExternalAHRS_InertialLabs::send_eahrs_status_flag(GCS_MAVLINK &link) con
                                               (uint16_t)ilab_gps_data.fix_type,
                                               ilab_gps_data.spoof_status};
     mavlink_msg_eahrs_status_info_send_struct(link.get_chan(), &package);
+}
+
+void AP_ExternalAHRS_InertialLabs::send_gps_raw_int(GCS_MAVLINK &link) const
+{
+    const mavlink_external_ahrs_gps_raw_int_t package{
+        AP::gps().last_fix_time_ms(0)*(uint64_t)1000,
+        ilab_gps_data.latitude,                                       // in 1E7 degrees
+        ilab_gps_data.longitude,                                      // in 1E7 degrees
+        static_cast<int32_t>(ilab_gps_data.altitude * 10UL),          // in mm
+        static_cast<uint16_t>(ilab_gps_data.dop.hdop * 0.1f),         // in mm
+        static_cast<uint16_t>(ilab_gps_data.dop.vdop * 0.1f),         // in mm
+        static_cast<uint16_t>(ilab_gps_data.hor_speed * 100),         // in cm/s
+        static_cast<uint16_t>(ilab_gps_data.track_over_ground * 100), // deg*100,
+        static_cast<uint8_t>(ilab_gps_data.fix_type + 1),
+        ilab_gps_data.full_sat_info.SolnSVs,
+        0,
+        static_cast<uint32_t>(ilab_gps_data.gnss_pos_vel_accuracy.pos_accuracy * 10),  // mm
+        static_cast<uint32_t>(ilab_gps_data.gnss_pos_vel_accuracy.pos_accuracy * 10),  // mm
+        static_cast<uint32_t>(ilab_gps_data.gnss_pos_vel_accuracy.vel_accuracy * 10),  // mm/s
+        0,
+        0
+    };
+    mavlink_msg_external_ahrs_gps_raw_int_send_struct(link.get_chan(), &package);
 }
 
 #endif  // AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED

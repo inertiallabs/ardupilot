@@ -43,6 +43,7 @@ public:
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) override;
     bool get_wind_estimation(Vector3f &wind) override;
     void send_eahrs_status_flag(class GCS_MAVLINK &link) const override;
+    void send_gps_raw_int(GCS_MAVLINK &link) const override;
 
     // check for new data
     void update() override {
@@ -87,6 +88,7 @@ public:
         GNSS_VEL_LATENCY = 0x3D,
         GNSS_SOL_STATUS = 0x38,
         GNSS_POS_VEL_TYPE = 0x39,
+        GNSS_POS_VEL_ACCURACY = 0X43,
         NEW_AIDING_DATA = 0x65,
         NEW_AIDING_DATA2 = 0xA1,
         EXT_SPEED = 0x61,
@@ -213,6 +215,11 @@ public:
         int32_t reserved;
     };
 
+    struct PACKED gnss_pos_vel_accuracy_t {
+        uint16_t pos_accuracy; // m*100
+        uint16_t vel_accuracy; // m/s*100
+    };
+
     union PACKED ILabsData {
         uint32_t gps_time_ms; // ms since start of GPS week
         uint16_t gps_week;
@@ -275,6 +282,7 @@ public:
         ext_ambient_data_t ext_ambient_air_data;
         ext_wind_data_t ext_wind_data;
         uint8_t mag_clb_accuracy; // deg*10
+        gnss_pos_vel_accuracy_t gnss_pos_vel_accuracy;
     };
 
     AP_ExternalAHRS::gps_data_message_t gps_data;
@@ -326,12 +334,12 @@ private:
     struct ILAB_GPS_DATA {
         uint32_t ms_tow;
         uint16_t gps_week;
-        int32_t latitude;
-        int32_t longitude;
-        int32_t altitude;
-        float hor_speed;
-        float ver_speed;
-        float track_over_ground;
+        int32_t latitude;  // deg*1.0e7
+        int32_t longitude; // deg*1.0e7
+        int32_t altitude;  // cm
+        float hor_speed;   // m/s
+        float ver_speed;   // m/s
+        float track_over_ground; // deg
         gnss_dop_t dop;
         uint8_t new_data;
         uint8_t fix_type;
@@ -341,6 +349,7 @@ private:
         uint16_t vel_latency;
         uint8_t gnss_sol_status;
         uint8_t gnss_pos_vel_type;
+        gnss_pos_vel_accuracy_t gnss_pos_vel_accuracy;
     };
 
     struct ILAB_INS_DATA{

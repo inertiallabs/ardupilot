@@ -132,6 +132,7 @@ public:
     void write_bytes(const char *bytes, uint8_t len);
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     void send_eahrs_status_flag(class GCS_MAVLINK &link) const;
+    void send_gps_raw_int(class GCS_MAVLINK &link) const;
 
     // update backend
     void update();
