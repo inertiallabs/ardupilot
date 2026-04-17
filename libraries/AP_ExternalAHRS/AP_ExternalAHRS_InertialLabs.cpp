@@ -555,6 +555,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             gps_data.ned_vel_east = ilab_ins_data.velocity.y;
             gps_data.ned_vel_down = ilab_ins_data.velocity.z;
 
+            if ((ilab_gps_data.gnss_sol_status == 0) && (ilab_gps_data.fix_type >= 1))
+            {
+                ilab_gps_data.last_fix_time = now_ms;
+            }
+
             const bool gps_sol_trick = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_GPS_TRICK);
             const bool gps_solution = ((ilab_ins_data.unit_status2 & IL_USW2::GNSS_FUSION_OFF) == 0) && (ilab_gps_data.gnss_sol_status == 0) && (ilab_gps_data.fix_type == 2);
             if (gps_sol_trick || gps_solution) { // use valid GNSS data as is
@@ -1290,7 +1295,7 @@ void AP_ExternalAHRS_InertialLabs::send_eahrs_status_flag(GCS_MAVLINK &link) con
 void AP_ExternalAHRS_InertialLabs::send_gps_raw_int(GCS_MAVLINK &link) const
 {
     const mavlink_external_ahrs_gps_raw_int_t package{
-        AP::gps().last_fix_time_ms(0)*(uint64_t)1000,
+        ilab_gps_data.last_fix_time * (uint64_t)1000,
         ilab_gps_data.latitude,                                       // in 1E7 degrees
         ilab_gps_data.longitude,                                      // in 1E7 degrees
         static_cast<int32_t>(ilab_gps_data.altitude * 10UL),          // in mm

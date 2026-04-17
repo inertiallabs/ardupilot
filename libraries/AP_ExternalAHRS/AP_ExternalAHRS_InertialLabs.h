@@ -350,6 +350,7 @@ private:
         uint8_t gnss_sol_status;
         uint8_t gnss_pos_vel_type;
         gnss_pos_vel_accuracy_t gnss_pos_vel_accuracy;
+        uint32_t last_fix_time; //ms
     };
 
     struct ILAB_INS_DATA{
