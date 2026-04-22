@@ -6486,7 +6486,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 
 #if HAL_EXTERNAL_AHRS_ENABLED
     case MSG_EXTERNAL_AHRS_GPS_RAW:
-        CHECK_PAYLOAD_SIZE(EXTERNAL_AHRS_GPS_RAW_INT);
+        CHECK_PAYLOAD_SIZE(EXTERNAL_AHRS_GPS_RAW);
         AP::externalAHRS().send_gps_raw_int(*this);
         break;
 #endif
