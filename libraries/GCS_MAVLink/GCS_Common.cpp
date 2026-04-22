@@ -1061,6 +1061,9 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_LOCAL_POSITION_NED,    MSG_LOCAL_POSITION},
         { MAVLINK_MSG_ID_VFR_HUD,               MSG_VFR_HUD},
 #endif
+#if HAL_EXTERNAL_AHRS_ENABLED
+        { MAVLINK_MSG_ID_EXTERNAL_AHRS_GPS_RAW_INT, MSG_EXTERNAL_AHRS_GPS_RAW},
+#endif
         { MAVLINK_MSG_ID_HWSTATUS,              MSG_HWSTATUS},
         { MAVLINK_MSG_ID_WIND,                  MSG_WIND},
 #if AP_RANGEFINDER_ENABLED
@@ -6478,6 +6481,13 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_AHRS2:
         CHECK_PAYLOAD_SIZE(AHRS2);
         send_ahrs2();
+        break;
+#endif
+
+#if HAL_EXTERNAL_AHRS_ENABLED
+    case MSG_EXTERNAL_AHRS_GPS_RAW:
+        CHECK_PAYLOAD_SIZE(EXTERNAL_AHRS_GPS_RAW_INT);
+        AP::externalAHRS().send_gps_raw_int(*this);
         break;
 #endif
 
