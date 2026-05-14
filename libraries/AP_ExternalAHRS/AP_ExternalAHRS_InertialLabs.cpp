@@ -118,18 +118,18 @@ bool AP_ExternalAHRS_InertialLabs::check_header(const ILabsHeader *h) const
   check the UART for more data
   returns true if we have consumed potentially valid bytes
  */
-bool AP_ExternalAHRS_InertialLabs::check_uart()
+DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
 {
     WITH_SEMAPHORE(state.sem);
 
     if (!setup_complete) {
-        return true;
+        return DataReadStatus::NEED_WAIT;
     }
     // ensure we own the uart
     uart->begin(0);
     uint32_t n = uart->available();
     if (n == 0) {
-        return true;
+        return DataReadStatus::NEED_WAIT;
     }
     if (n + buffer_ofs > sizeof(buffer)) {
         n = sizeof(buffer) - buffer_ofs;
@@ -141,11 +141,11 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     } else {
         if (!check_header(h)) {
             re_sync();
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
         if (buffer_ofs > h->msg_len+2) {
             re_sync();
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
         n = MIN(n, uint32_t(h->msg_len + 2 - buffer_ofs));
     }
@@ -153,18 +153,18 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     const ssize_t nread = uart->read(&buffer[buffer_ofs], n);
     if (nread != ssize_t(n)) {
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
     buffer_ofs += n;
 
     if (buffer_ofs < sizeof(ILabsHeader)) {
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: packet skipping");
-        return true;
+        return DataReadStatus::NEED_WAIT;
     }
 
     if (!check_header(h)) {
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
 
     if (buffer_ofs < h->msg_len+2) {
@@ -174,12 +174,12 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         const uint16_t needed = h->msg_len+2 - buffer_ofs;
         if (uart->available() < needed) {
             // need more data
-            return true;
+            return DataReadStatus::NEED_WAIT;
         }
         const ssize_t nread2 = uart->read(&buffer[buffer_ofs], needed);
         if (nread2 != needed) {
             re_sync();
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
         buffer_ofs += nread2;
     }
@@ -189,7 +189,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     const uint16_t crc2 = le16toh_ptr(&buffer[buffer_ofs-2]);
     if (crc1 != crc2) {
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
 
     const uint8_t *buffer_end = &buffer[buffer_ofs];
@@ -197,13 +197,13 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     const uint8_t *payload = &buffer[6];
     if (payload_size < 3) {
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
     const uint8_t num_messages = payload[0];
     if (num_messages == 0 ||
         num_messages > payload_size-1) {
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
     const uint8_t *message_ofs = &payload[num_messages+1];
     bool need_re_sync = false;
@@ -225,7 +225,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
     for (uint8_t i=0; i<num_messages; i++) {
         if (message_ofs >= buffer_end) {
             re_sync();
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
         MessageType mtype = (MessageType)payload[1+i];
         ILabsData &u = *(ILabsData*)message_ofs;
@@ -479,20 +479,20 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
             // got an unknown message
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: unknown msg 0x%02x", unsigned(mtype));
             buffer_ofs = 0;
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
         message_ofs += msg_len;
 
         if (msg_len == 0 || need_re_sync) {
             re_sync();
-            return false;
+            return DataReadStatus::NO_WAIT;
         }
     }
 
     if (h->msg_len != message_ofs-buffer) {
         // we had stray bytes at the end of the message
         re_sync();
-        return false;
+        return DataReadStatus::NO_WAIT;
     }
 
     const bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
@@ -1034,7 +1034,7 @@ bool AP_ExternalAHRS_InertialLabs::check_uart()
         }
     }
 
-    return true;
+    return DataReadStatus::SUCCESS;
 }
 
 void AP_ExternalAHRS_InertialLabs::update_thread()
@@ -1048,7 +1048,7 @@ void AP_ExternalAHRS_InertialLabs::update_thread()
 
     setup_complete = true;
     while (true) {
-        if (check_uart()) {
+        if (check_uart() == DataReadStatus::NEED_WAIT) {
             hal.scheduler->delay_microseconds(250);
         }
     }

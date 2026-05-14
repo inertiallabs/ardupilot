@@ -25,6 +25,12 @@
 #include "AP_ExternalAHRS_backend.h"
 #include "AP_ExternalAHRS_InertialLabs_message_list.h"
 
+enum class DataReadStatus {
+    NEED_WAIT,
+    NO_WAIT,
+    SUCCESS,
+};
+
 class AP_ExternalAHRS_InertialLabs : public AP_ExternalAHRS_backend {
 
 public:
@@ -299,7 +305,7 @@ private:
     bool setup_complete;
 
     void update_thread();
-    bool check_uart();
+    DataReadStatus check_uart();
     bool check_header(const ILabsHeader *h) const;
     uint16_t get_num_points_to_dec(const uint16_t &rate) const;
     void send_EAHRS_status_msg(uint16_t &last_state, uint16_t &current_state, const ILStatusMessage* msg_list, const size_t &msg_list_size, uint64_t* last_msg);
