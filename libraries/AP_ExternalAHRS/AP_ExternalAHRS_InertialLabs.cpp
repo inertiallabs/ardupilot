@@ -38,6 +38,13 @@
 
 extern const AP_HAL::HAL &hal;
 
+static uint32_t last_report_ms{0};
+static uint32_t max_total_us{0};
+static uint32_t sum_total_us{0};
+static uint32_t parse_skip_no_wait_package_count{0};
+static uint32_t parse_skip_need_wait_package_count{0};
+static uint32_t parse_good_package_count{0};
+
 // acceleration due to gravity in m/s/s used in IL INS
 #define IL_GRAVITY_MSS     9.8106f
 
@@ -1048,8 +1055,51 @@ void AP_ExternalAHRS_InertialLabs::update_thread()
 
     setup_complete = true;
     while (true) {
-        if (check_uart() == DataReadStatus::NEED_WAIT) {
+        const uint32_t t0 = AP_HAL::micros();
+
+        const DataReadStatus res = check_uart();
+        const uint32_t t1 = AP_HAL::micros();
+
+        if(res == DataReadStatus::NEED_WAIT) {
             hal.scheduler->delay_microseconds(250);
+        }
+        const uint32_t t2 = AP_HAL::micros();
+
+        if (res == DataReadStatus::NO_WAIT) {
+            parse_skip_no_wait_package_count++;
+        } else if (res == DataReadStatus::NEED_WAIT) {
+            parse_skip_need_wait_package_count++;
+        } else if (res == DataReadStatus::SUCCESS) {
+            const uint32_t dt = t2 - t0;
+            max_total_us = MAX(max_total_us, dt);
+            sum_total_us += dt;
+            parse_good_package_count++;
+            uint32_t now = AP_HAL::millis();
+
+            if (now - last_report_ms > 1000) {
+
+                last_report_ms = now;
+                const uint32_t avg = sum_total_us / parse_good_package_count;
+
+                // Time measuring
+                // For last package: Total, Full circle, Wait time
+                // For many packages: Average, Max, Parse-good package count, Parse-skip no wait package count, Parse-skip need wait package count
+                GCS_SEND_TEXT(MAV_SEVERITY_WARNING,
+                    "AHRS T=%lu F=%u A=%u M=%u G=%u I=%u W=%u",
+                    dt,
+                    unsigned(t1 - t0),
+                    unsigned(avg),
+                    unsigned(max_total_us),
+                    unsigned(parse_good_package_count),
+                    unsigned(parse_skip_no_wait_package_count),
+                    unsigned(parse_skip_need_wait_package_count));
+
+                max_total_us = 0;
+                sum_total_us = 0;
+                parse_good_package_count = 0;
+                parse_skip_no_wait_package_count = 0;
+                parse_skip_need_wait_package_count = 0;
+            }
         }
     }
 }
