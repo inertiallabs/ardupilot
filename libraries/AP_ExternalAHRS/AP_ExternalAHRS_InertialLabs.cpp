@@ -38,13 +38,6 @@
 
 extern const AP_HAL::HAL &hal;
 
-static uint32_t last_report_ms{0};
-static uint32_t max_total_us{0};
-static uint32_t sum_total_us{0};
-static uint32_t parse_skip_no_wait_package_count{0};
-static uint32_t parse_skip_need_wait_package_count{0};
-static uint32_t parse_good_package_count{0};
-
 // acceleration due to gravity in m/s/s used in IL INS
 #define IL_GRAVITY_MSS     9.8106f
 
@@ -132,13 +125,10 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     if (!setup_complete) {
         return DataReadStatus::NEED_WAIT;
     }
-
-    const uint32_t t0 = AP_HAL::micros();
     // ensure we own the uart
     uart->begin(0);
     uint32_t n = uart->available();
     if (n == 0) {
-        parse_skip_need_wait_package_count++;
         return DataReadStatus::NEED_WAIT;
     }
     if (n + buffer_ofs > sizeof(buffer)) {
@@ -151,12 +141,10 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     } else {
         if (!check_header(h)) {
             re_sync();
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
         if (buffer_ofs > h->msg_len+2) {
             re_sync();
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
         n = MIN(n, uint32_t(h->msg_len + 2 - buffer_ofs));
@@ -165,20 +153,17 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     const ssize_t nread = uart->read(&buffer[buffer_ofs], n);
     if (nread != ssize_t(n)) {
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
     buffer_ofs += n;
 
     if (buffer_ofs < sizeof(ILabsHeader)) {
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: packet skipping");
-        parse_skip_need_wait_package_count++;
         return DataReadStatus::NEED_WAIT;
     }
 
     if (!check_header(h)) {
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
 
@@ -189,13 +174,11 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
         const uint16_t needed = h->msg_len+2 - buffer_ofs;
         if (uart->available() < needed) {
             // need more data
-            parse_skip_need_wait_package_count++;
             return DataReadStatus::NEED_WAIT;
         }
         const ssize_t nread2 = uart->read(&buffer[buffer_ofs], needed);
         if (nread2 != needed) {
             re_sync();
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
         buffer_ofs += nread2;
@@ -206,7 +189,6 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     const uint16_t crc2 = le16toh_ptr(&buffer[buffer_ofs-2]);
     if (crc1 != crc2) {
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
 
@@ -215,14 +197,12 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     const uint8_t *payload = &buffer[6];
     if (payload_size < 3) {
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
     const uint8_t num_messages = payload[0];
     if (num_messages == 0 ||
         num_messages > payload_size-1) {
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
     const uint8_t *message_ofs = &payload[num_messages+1];
@@ -232,10 +212,19 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     Bitmask<256> msg_types;
     uint32_t now_ms = AP_HAL::millis();
 
+    const bool transmit_airspeed = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_TRANSMIT_AIRSPEED);
+    if (transmit_airspeed) {
+        uint16_t points_to_decimate = get_num_points_to_dec(max_aiding_data_rate);
+        if (tx_counter >= points_to_decimate) {
+            make_tx_packet(tx_buffer);
+            tx_counter = 0;
+        }
+        tx_counter++;
+    }
+
     for (uint8_t i=0; i<num_messages; i++) {
         if (message_ofs >= buffer_end) {
             re_sync();
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
         MessageType mtype = (MessageType)payload[1+i];
@@ -490,14 +479,12 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
             // got an unknown message
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "InertialLabs: unknown msg 0x%02x", unsigned(mtype));
             buffer_ofs = 0;
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
         message_ofs += msg_len;
 
         if (msg_len == 0 || need_re_sync) {
             re_sync();
-            parse_skip_no_wait_package_count++;
             return DataReadStatus::NO_WAIT;
         }
     }
@@ -505,11 +492,8 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
     if (h->msg_len != message_ofs-buffer) {
         // we had stray bytes at the end of the message
         re_sync();
-        parse_skip_no_wait_package_count++;
         return DataReadStatus::NO_WAIT;
     }
-
-    const uint32_t t1 = AP_HAL::micros();
 
     const bool filter_ok = (ilab_ins_data.unit_status & IL_USW::INITIAL_ALIGNMENT_FAIL) == 0 && (ilab_ins_data.ins_sol_status != 8);
 
@@ -651,20 +635,6 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
 #endif // AP_AIRSPEED_EXTERNAL_ENABLED
 
     buffer_ofs = 0;
-
-    const uint32_t t2 = AP_HAL::micros();
-
-    const bool transmit_airspeed = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_TRANSMIT_AIRSPEED);
-    if (transmit_airspeed) {
-        uint16_t points_to_decimate = get_num_points_to_dec(max_aiding_data_rate);
-        if (tx_counter >= points_to_decimate) {
-            make_tx_packet(tx_buffer);
-            tx_counter = 0;
-        }
-        tx_counter++;
-    }
-
-    const uint32_t t3 = AP_HAL::micros();
 
 #if HAL_LOGGING_ENABLED
     uint64_t now_us = AP_HAL::micros64();
@@ -958,8 +928,6 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
 
 #endif  // HAL_LOGGING_ENABLED
 
-    const uint32_t t4 = AP_HAL::micros();
-
     const bool send_ilab_status = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_SEND_STATUS);
     if (send_ilab_status) {
         // Send IL INS status messages to GCS via MAVLink
@@ -1064,44 +1032,6 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
 
             last_ins_status.ins_sol_status = ilab_ins_data.ins_sol_status;
         }
-    }
-
-    const uint32_t t5 = AP_HAL::micros();
-
-    const uint32_t dt = t5 - t0;
-    max_total_us = MAX(max_total_us, dt);
-    sum_total_us += dt;
-    parse_good_package_count++;
-
-    if (t5 - last_report_ms > 1000000) {
-
-        last_report_ms = t5;
-        const uint32_t avg = sum_total_us / parse_good_package_count;
-
-        // Time measuring
-        // For last package: Total, Update data, Handle data, Send to sensor, Write logs, Send GCS messages
-         GCS_SEND_TEXT(MAV_SEVERITY_INFO,
-            "ILB T=%lu U=%u H=%u S=%u L=%u GC=%u",
-            dt,
-            unsigned(t1 - t0),
-            unsigned(t2 - t1),
-            unsigned(t3 - t2),
-            unsigned(t4 - t3),
-            unsigned(t5 - t4));
-        // For many packages: Average, Max, Parse-good package count, Parse-skip no wait package count, Parse-skip need wait package count
-        GCS_SEND_TEXT(MAV_SEVERITY_WARNING,
-            "ILB A=%u M=%u G=%u I=%u W=%u",
-            unsigned(avg),
-            unsigned(max_total_us),
-            unsigned(parse_good_package_count),
-            unsigned(parse_skip_no_wait_package_count),
-            unsigned(parse_skip_need_wait_package_count));
-
-        max_total_us = 0;
-        sum_total_us = 0;
-        parse_good_package_count = 0;
-        parse_skip_no_wait_package_count = 0;
-        parse_skip_need_wait_package_count = 0;
     }
 
     return DataReadStatus::SUCCESS;
