@@ -44,6 +44,11 @@ extern const AP_HAL::HAL &hal;
 static const uint64_t dt_critical_msg = 10000; // delay between critical messages to send GCS
 static const uint16_t max_aiding_data_rate = 50; // Maximum Aiding data rate in Hz
 
+static uint64_t last_55aa_report_us{0};
+static uint64_t max_55aa_total_us{0};
+static uint64_t sum_55aa_total_us{0};
+static uint64_t measurements_55aa_count{0};
+
 // initial array of timestamp of IL INS statuses
 uint64_t IL_usw_last_msg_ms[sizeof(IL_usw_msg) / sizeof(IL_usw_msg[0])] = {0};
 uint64_t IL_usw2_last_msg_ms[sizeof(IL_usw2_msg) / sizeof(IL_usw2_msg[0])] = {0};
@@ -515,6 +520,34 @@ DataReadStatus AP_ExternalAHRS_InertialLabs::check_uart()
         ins_data.accel = ilab_sensors_data.accel;
         ins_data.gyro = ilab_sensors_data.gyro;
         ins_data.temperature = ilab_sensors_data.temperature;
+
+        const uint64_t t0 = uart->get_last_55aa_timestamp_us();
+        if (t0) {
+            const uint64_t t1 = AP_HAL::micros64();
+            const uint64_t dt = t1 - t0;
+            max_55aa_total_us = MAX(max_55aa_total_us, dt);
+            sum_55aa_total_us += dt;
+            measurements_55aa_count++;
+
+            if (t1 - last_55aa_report_us > 2000000) {
+
+                last_55aa_report_us = t1;
+                const uint64_t avg = sum_55aa_total_us / measurements_55aa_count;
+
+                // Time measuring 55AA: Last, Average, Max, Measurements count
+                GCS_SEND_TEXT(MAV_SEVERITY_WARNING,
+                    "55AA L=%llu A=%llu M=%llu C=%llu",
+                    dt,
+                    avg,
+                    max_55aa_total_us,
+                    measurements_55aa_count);
+
+                max_55aa_total_us = 0;
+                sum_55aa_total_us = 0;
+                measurements_55aa_count = 0;
+            }
+        }
+
         AP::ins().handle_external(ins_data);
         state.accel = ins_data.accel;
         state.gyro = ins_data.gyro;
@@ -1049,7 +1082,7 @@ void AP_ExternalAHRS_InertialLabs::update_thread()
     setup_complete = true;
     while (true) {
         if (check_uart() == DataReadStatus::NEED_WAIT) {
-            hal.scheduler->delay_microseconds(250);
+            hal.scheduler->delay_microseconds(150);
         }
     }
 }
