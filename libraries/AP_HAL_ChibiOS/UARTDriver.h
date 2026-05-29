@@ -141,6 +141,10 @@ public:
      */
     bool is_dma_enabled() const override { return rx_dma_enabled && tx_dma_enabled; }
 
+    uint64_t get_last_55aa_timestamp_us() override;
+    void update_55aa_timestamp(const uint8_t *buf, uint16_t len, uint64_t irq_time_us);
+    void clear_sync_55aa_timestamp();
+
 private:
     const SerialDef &sdef;
     bool rx_dma_enabled;
@@ -276,6 +280,12 @@ private:
     void uart_thread();
     static void uart_rx_thread(void* arg);
     static void uart_thread_trampoline(void* p);
+
+    uint8_t _55aa_sync_state = 0; // 0 = wait 0x55, 1 = wait 0xAA
+    uint64_t _rx_total_byte_counter = 0;
+    uint64_t _last_sync_55aa_pos = 0;
+    uint64_t _last_55aa_timestamp_us = 0;
+    bool _last_55aa_valid = false;
 
 protected:
     void _begin(uint32_t b, uint16_t rxS, uint16_t txS) override;

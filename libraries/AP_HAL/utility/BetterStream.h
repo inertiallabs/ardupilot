@@ -55,4 +55,9 @@ public:
     /* NB txspace was traditionally a member of BetterStream in the
      * FastSerial library. As far as concerns go, it belongs with available() */
     virtual uint32_t txspace() = 0;
+
+    virtual uint64_t get_last_55aa_timestamp_us()
+    {
+        return 0;
+    };
 };

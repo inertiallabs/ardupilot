@@ -623,7 +623,15 @@ __RAMFUNC__ void UARTDriver::rxbuff_full_irq(void* self, uint32_t flags)
         /*
           we have data to copy out
          */
-        uart_drv->_readbuf.write(uart_drv->rx_bounce_buf[bounce_idx], len);
+        const uint64_t irq_time_us = AP_HAL::micros64();
+        const uint8_t *rxbuf = uart_drv->rx_bounce_buf[bounce_idx];
+        uart_drv->update_55aa_timestamp(rxbuf, len, irq_time_us);
+
+        const uint32_t written = uart_drv->_readbuf.write(uart_drv->rx_bounce_buf[bounce_idx], len);
+        if (written < len) {
+            uart_drv->clear_sync_55aa_timestamp();
+        }
+
         uart_drv->_rx_stats_bytes += len;
         uart_drv->receive_timestamp_update();
     }
@@ -1896,6 +1904,108 @@ void UARTDriver::disable_rxtx(void) const
     if (atx_line) {
         palSetLineMode(atx_line, PAL_MODE_INPUT);
     }
+}
+
+uint64_t UARTDriver::get_last_55aa_timestamp_us()
+{
+    if (!_last_55aa_valid) {
+        return 0;
+    }
+
+    const uint64_t bytes_since_55 = _rx_total_byte_counter - _last_sync_55aa_pos;
+
+    // bytes_since_55 includes:
+    // 55 itself + AA + following bytes
+    //
+    // after 55AA available bytes:
+    // bytes_since_55 - 2
+
+    if (bytes_since_55 < 2) {
+        return 0;
+    }
+
+    const uint64_t bytes_after_55aa = bytes_since_55 - 2;
+
+    // Full UDD message size is 169
+    // if we have received more than 167 bytes after 55AA then the timestamp is too old to be useful
+    if (bytes_after_55aa >= 167) {
+        _last_55aa_valid = false;
+        return 0;
+    }
+
+    const uint64_t ret = _last_55aa_timestamp_us;
+
+    _last_55aa_valid = false;
+    _last_55aa_timestamp_us = 0;
+    _last_sync_55aa_pos = 0;
+
+    return ret;
+}
+
+void UARTDriver::update_55aa_timestamp(const uint8_t *buf, uint16_t len, uint64_t irq_time_us)
+{
+    if (buf == nullptr || len == 0) {
+        return;
+    }
+
+    float byte_time_us = 0.0f;
+    /*
+      DMA interrupt happens after a chunk has arrived.
+      Estimate byte time for 8N1 UART:
+      1 start + 8 data + 1 stop = 10 bits per byte.
+    */
+    if (!sdef.is_usb && _baudrate > 0) {
+        byte_time_us = 1.0e7f / float(_baudrate);
+    }
+
+    for (uint16_t i = 0; i < len; i++) {
+        const uint8_t b = buf[i];
+        const uint64_t current_pos = _rx_total_byte_counter++;
+
+        if (_55aa_sync_state == 0) {
+            if (b == 0x55) {
+                _55aa_sync_state = 1;
+                _last_sync_55aa_pos = current_pos;
+            }
+            continue;
+        }
+
+        if (_55aa_sync_state == 1) {
+            if (b == 0xAA) {
+                /*
+                  i is index of second byte 0xAA.
+                  Timestamp 55AA sync as time of first byte 0x55.
+                */
+                uint64_t ts = irq_time_us;
+
+                if (byte_time_us > 0.0f) {
+                    const uint16_t bytes_after_55 = len - i;
+                    // len - i:
+                    //   includes bytes after 0xAA plus one byte duration back to 0xAA
+                    ts -= uint64_t(bytes_after_55 * byte_time_us);
+                }
+
+                _last_55aa_timestamp_us = ts;
+                _last_55aa_valid = true;
+
+                _55aa_sync_state = 0;
+            } else if (b == 0x55) {
+                // possible new sync start: 55 55 AA
+                _55aa_sync_state = 1;
+                _last_sync_55aa_pos = current_pos;
+            } else {
+                _55aa_sync_state = 0;
+            }
+        }
+    }
+}
+
+void UARTDriver::clear_sync_55aa_timestamp()
+{
+    _last_55aa_valid = false;
+    _last_55aa_timestamp_us = 0;
+    _last_sync_55aa_pos = 0;
+    _55aa_sync_state = 0;
 }
 
 #endif //CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
