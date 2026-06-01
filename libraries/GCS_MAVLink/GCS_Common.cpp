@@ -3224,8 +3224,8 @@ MAV_RESULT GCS_MAVLINK::set_message_interval(uint32_t msg_id, int32_t interval_u
     } else if (interval_us == -1) {
         // minus-one is "stop sending"
         interval_ms = 0;
-    } else if (interval_us < 0) {  
-        return MAV_RESULT_DENIED; 
+    } else if (interval_us < 0) {
+        return MAV_RESULT_DENIED;
     } else if (interval_us < 1000) {
         // don't squash sub-ms times to zero
         interval_ms = 1;
@@ -3368,6 +3368,10 @@ MAV_RESULT GCS_MAVLINK::handle_externalAHRS_message(const mavlink_command_int_t 
             return MAV_RESULT_ACCEPTED;
         case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
             AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING,
+                                              reinterpret_cast<const ExternalAHRS_command_data&>(packet));
+            return MAV_RESULT_ACCEPTED;
+        case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_DVL:
+            AP::externalAHRS().handle_command(ExternalAHRS_command::AIDING_DATA_DVL,
                                               reinterpret_cast<const ExternalAHRS_command_data&>(packet));
             return MAV_RESULT_ACCEPTED;
 
@@ -5981,6 +5985,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_int_packet(const mavlink_command_int_t &p
     case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_WIND:
     case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_AMBIENT_AIR:
     case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_EXTERNAL_HEADING:
+    case MAV_CMD_EXTERNAL_AHRS_AIDING_DATA_DVL:
         return handle_externalAHRS_message(packet);
 #endif
     }
