@@ -1264,6 +1264,7 @@ void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, 
         case ExternalAHRS_command::AIDING_DATA_WIND:
         case ExternalAHRS_command::AIDING_DATA_AMBIENT_AIR:
         case ExternalAHRS_command::AIDING_DATA_EXTERNAL_HEADING:
+        case ExternalAHRS_command::AIDING_DATA_DVL:
         {
             InertialLabs::Data_context context;
             InertialLabs::fill_command_pyload(context, command, data);

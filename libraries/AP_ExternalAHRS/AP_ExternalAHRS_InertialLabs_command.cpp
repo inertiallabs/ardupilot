@@ -143,6 +143,22 @@ bool fill_command_pyload(Data_context & context,
             context.length += sizeof(AidingData::External_heading);
             return true;
 
+        case ExternalAHRS_command::AIDING_DATA_DVL:
+            context.data[7] = 0x07;
+            {
+                AidingData::Doppler_velocity_log *d = (AidingData::Doppler_velocity_log *) &context.data[8];
+                d->lateralVelocity = static_cast<int32_t>(data.param1);
+                d->forwardVelocity = static_cast<int32_t>(data.param2);
+                d->verticalVelocity = static_cast<int32_t>(data.param3);
+                d->lateralVelocityStd = static_cast<uint16_t>(data.param4);
+                d->forwardVelocityStd = static_cast<uint16_t>(data.x);
+                d->verticalVelocityStd = static_cast<uint16_t>(data.y);
+                d->latency = static_cast<uint16_t>(data.z);
+                d->reserved = 0;
+            }
+            context.length += sizeof(AidingData::Doppler_velocity_log);
+            return true;
+
         default:
             context.length = 0;
             return false;
