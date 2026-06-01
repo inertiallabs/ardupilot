@@ -20,6 +20,7 @@ enum class ExternalAHRS_command {
     AIDING_DATA_WIND,
     AIDING_DATA_AMBIENT_AIR,
     AIDING_DATA_EXTERNAL_HEADING,
+    AIDING_DATA_DVL,
 };
 
 struct ExternalAHRS_command_data{

@@ -54,6 +54,17 @@ struct PACKED External_heading {
     uint16_t latency;    // msec
 };
 
+struct PACKED Doppler_velocity_log {
+    int32_t lateralVelocity;   // m/sec*1000
+    int32_t forwardVelocity;   // m/sec*1000
+    int32_t verticalVelocity;  // m/sec*1000
+    uint16_t lateralVelocityStd;    // m/sec*1000
+    uint16_t forwardVelocityStd;   // m/sec*1000
+    uint16_t verticalVelocityStd;  // m/sec*1000
+    uint16_t latency;    // msec
+    uint32_t reserved;
+};
+
 } // namespace InertialLabs::AidingData
 
 #endif  // AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
