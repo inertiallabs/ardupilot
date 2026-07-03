@@ -24,6 +24,7 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_CANManager/AP_CANManager.h>
+#include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_Common/ExpandingString.h>
 
@@ -51,6 +52,9 @@ static const SysFileList sysfs_file_list[] = {
     {"storage.bin"},
 #if AP_FILESYSTEM_SYS_FLASH_ENABLED
     {"flash.bin"},
+#endif
+#if AP_EXTERNAL_AHRS_ENABLED
+    {"eahrs_status.txt"},
 #endif
 };
 
@@ -154,7 +158,12 @@ int AP_Filesystem_Sys::open(const char *fname, int flags, bool allow_absolute_pa
         r.str->set_buffer((char*)ptr, size, size);
     }
 #endif
-    
+#if AP_EXTERNAL_AHRS_ENABLED
+    if (strcmp(fname, "eahrs_status.txt") == 0) {
+        AP::externalAHRS().format_status(*r.str);
+    }
+#endif
+
     if (r.str->get_length() == 0) {
         errno = r.str->has_failed_allocation()?ENOMEM:ENOENT;
         delete r.str;
