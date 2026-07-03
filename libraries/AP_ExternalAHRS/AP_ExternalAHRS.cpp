@@ -439,6 +439,13 @@ void AP_ExternalAHRS::send_eahrs_status_flag(GCS_MAVLINK &link) const
     }
 }
 
+void AP_ExternalAHRS::format_status(ExpandingString &str)
+{
+    if (backend) {
+        backend->format_status(str);
+    }
+}
+
 void AP_ExternalAHRS::update(void)
 {
     if (backend) {
