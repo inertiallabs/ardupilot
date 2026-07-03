@@ -30,6 +30,7 @@
 #include <AP_NavEKF/AP_Nav_Common.h>
 #include <AP_GPS/AP_GPS_FixType.h>
 
+class ExpandingString;
 class GCS_MAVLINK;
 
 class AP_ExternalAHRS_backend;
@@ -139,6 +140,7 @@ public:
     void write_bytes(const char *bytes, uint8_t len);
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     void send_eahrs_status_flag(GCS_MAVLINK &link) const;
+    void format_status(ExpandingString &str);
 
     // update backend
     void update();
