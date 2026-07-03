@@ -30,6 +30,8 @@
 #include <AP_NavEKF/AP_Nav_Common.h>
 #include <AP_GPS/AP_GPS_FixType.h>
 
+class GCS_MAVLINK;
+
 class AP_ExternalAHRS_backend;
 
 class AP_ExternalAHRS {
@@ -131,12 +133,12 @@ public:
     void get_filter_status(nav_filter_status &status) const;
     bool get_gyro(Vector3f &gyro);
     bool get_accel(Vector3f &accel);
-    void send_status_report(class GCS_MAVLINK &link) const;
+    void send_status_report(GCS_MAVLINK &link) const;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const;
     bool get_wind_estimation(Vector3f &wind) const;
     void write_bytes(const char *bytes, uint8_t len);
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
-    void send_eahrs_status_flag(class GCS_MAVLINK &link) const;
+    void send_eahrs_status_flag(GCS_MAVLINK &link) const;
 
     // update backend
     void update();
