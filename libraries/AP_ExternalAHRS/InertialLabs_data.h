@@ -5,6 +5,7 @@
 #if AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
 
 #include <AP_Common/AP_Common.h>
+#include <AP_Common/Bitmask.h>
 #include <AP_Math/vector3.h>
 
 namespace InertialLabs { namespace AidingData {
@@ -473,6 +474,7 @@ struct SensorsData {
     float diff_press{0};      // Pa
     float temperature{0};     // degC
     float supply_voltage{0};  // V
+    Bitmask<256> udd_data_types_list{};
 };
 
 struct HandledSensorsData {

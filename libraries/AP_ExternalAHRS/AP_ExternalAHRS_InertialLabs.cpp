@@ -237,6 +237,9 @@ void AP_ExternalAHRS_InertialLabs::update_thread()
     }
 }
 
+// Check has UDD message type in the received data
+#define GOT_MSG(msg) sensors_data.udd_data_types_list.get(static_cast<uint16_t>(InertialLabs::DataType::msg))
+
 void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 {
     using InertialLabs::ADU;
@@ -251,7 +254,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
                            (sensors_data.ins.ins_sol_status != InsSolution::INVALID);
 
     const uint32_t package_timestamp_ms = static_cast<uint32_t>(sensors_data.package_timestamp_us / 1000);
-    if (filter_ok) {
+    if (filter_ok && GOT_MSG(ORIENTATION_ANGLES)) {
         // use IL INS attitude data in the ArduPilot algorithm instead of EKF3 or DCM
         state.quat.from_euler(static_cast<float>(radians(sensors_data.ins.roll)),
                               static_cast<float>(radians(sensors_data.ins.pitch)),
@@ -272,7 +275,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 
     const bool hasNewGpsData = (sensors_data.gps.new_data & (NewGPSData::NEW_GNSS_POSITION|NewGPSData::NEW_GNSS_VELOCITY)) != 0; // true if received new GNSS position or velocity
 
-    if (filter_ok) {
+    if (filter_ok && GOT_MSG(POSITION) && GOT_MSG(VELOCITIES)) {
         // use IL INS navigation solution instead of EKF3 or DCM
         state.location.lat = sensors_data.ins.latitude;
         state.location.lng = sensors_data.ins.longitude;
@@ -285,11 +288,21 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
         handled_sensor_data.vel_timestamp = package_timestamp_ms;
         handled_sensor_data.pos_timestamp = package_timestamp_ms;
 
-        gps_data.ins_lat_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.lat);
-        gps_data.ins_lng_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.lon);
-        gps_data.ins_alt_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.alt);
+        if (GOT_MSG(INS_POS_VEL_ACCURACY)) {
+            gps_data.ins_lat_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.lat);
+            gps_data.ins_lng_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.lon);
+            gps_data.ins_alt_accuracy = static_cast<uint32_t>(sensors_data.ins.ins_accuracy.alt);
+        }
 
-        if (hasNewGpsData) {
+        if (hasNewGpsData &&
+            GOT_MSG(UNIT_STATUS2) &&
+            GOT_MSG(FULL_SAT_INFO) &&
+            GOT_MSG(GNSS_POSITION) &&
+            GOT_MSG(GNSS_NEW_DATA) &&
+            GOT_MSG(GNSS_EXTENDED_INFO) &&
+            GOT_MSG(GPS_WEEK) &&
+            GOT_MSG(GNSS_VEL_TRACK) &&
+            GOT_MSG(GNSS_SOL_STATUS)) {
             // use IL INS navigation solution instead of GNSS solution
             gps_data.ms_tow = sensors_data.ins.ms_tow;
             gps_data.gps_week = sensors_data.gps.gps_week;
@@ -307,8 +320,9 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
             if (gps_sol_trick || gps_solution) { // use valid GNSS data as is
                 gps_data.fix_type = AP_GPS_FixType(sensors_data.gps.fix_type + 1);
                 gps_data.satellites_in_view = sensors_data.gps.full_sat_info.SolnSVs;
-                gps_data.hdop = static_cast<float>(sensors_data.gps.dop.hdop)*0.1f;
-                gps_data.vdop = static_cast<float>(sensors_data.gps.dop.vdop)*0.1f;
+                // use GNSS DOP = 90.0f (0.9) by default if no UDD message
+                gps_data.hdop = GOT_MSG(GNSS_DOP) ? static_cast<float>(sensors_data.gps.dop.hdop)*0.1f : 90.0f;
+                gps_data.vdop = GOT_MSG(GNSS_DOP) ? static_cast<float>(sensors_data.gps.dop.vdop)*0.1f : 90.0f;
             } else { // set fixed values to continue normal flight in GNSS-denied environments
                 gps_data.fix_type = AP_GPS_FixType::FIX_3D;
                 gps_data.satellites_in_view = 77;
@@ -343,7 +357,8 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
     }
 
 #if AP_BARO_EXTERNALAHRS_ENABLED
-    if ((sensors_data.ins.unit_status2 & USW2::ADU_BARO_FAIL) == 0) {
+    if (GOT_MSG(BARO_DATA) && GOT_MSG(UNIT_STATUS2) &&
+        (sensors_data.ins.unit_status2 & USW2::ADU_BARO_FAIL) == 0) {
         // use IL INS barometer output in the ArduPilot algorithm
         baro_data.pressure_pa = sensors_data.pressure;
         baro_data.temperature = sensors_data.temperature;
@@ -352,7 +367,8 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 #endif
 
 #if AP_COMPASS_EXTERNALAHRS_ENABLED
-    if ((sensors_data.ins.unit_status & USW::MAG_FAIL) == 0) {
+    if (GOT_MSG(MAG_DATA) &&
+        (sensors_data.ins.unit_status & USW::MAG_FAIL) == 0) {
         // use IL INS magnetometer outputs in the ArduPilot algorithm
         mag_data.field = sensors_data.mag;
         AP::compass().handle_external(mag_data);
@@ -361,7 +377,8 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED && (APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_ArduPlane))
     // only on plane and copter as others do not link AP_Airspeed
-    if ((sensors_data.ins.unit_status2 & USW2::ADU_DIFF_PRESS_FAIL) == 0) {
+    if (GOT_MSG(DIFFERENTIAL_PRESSURE) && GOT_MSG(TRUE_AIRSPEED) && GOT_MSG(UNIT_STATUS2) &&
+        (sensors_data.ins.unit_status2 & USW2::ADU_DIFF_PRESS_FAIL) == 0) {
         airspeed_data.differential_pressure = sensors_data.diff_press;
         airspeed_data.temperature = sensors_data.temperature;
         airspeed_data.airspeed = sensors_data.ins.true_airspeed;
@@ -370,7 +387,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
             if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
                 // use IL INS calculated true airspeed
                 bool airspeed_enabled = false;
-                if (filter_ok && (sensors_data.ins.air_data_status & ADU::AIRSPEED_FAIL) == 0) {
+                if (filter_ok && GOT_MSG(AIR_DATA_STATUS) && (sensors_data.ins.air_data_status & ADU::AIRSPEED_FAIL) == 0) {
                     airspeed_enabled = true;
                 }
                 arsp->set_external_airspeed_enabled(airspeed_enabled);
@@ -380,6 +397,8 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
     }
 #endif // AP_AIRSPEED_EXTERNAL_ENABLED
 }
+
+#undef GOT_MSG
 
 void AP_ExternalAHRS_InertialLabs::send_data_to_sensor()
 {
