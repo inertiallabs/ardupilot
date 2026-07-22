@@ -240,10 +240,14 @@ bool Sensor::parse_udd_payload()
     // 1 byte for message count + byte list of messages types
     const uint8_t *message_data_offset = &payload[1 + message_count];
 
+    _sensors_data.udd_data_types_list.clearall();
+
     for (uint8_t i = 0; i < message_count; i++) {
         uint8_t message_length = 0;
         UDDMessageData &udd = *(UDDMessageData *)message_data_offset;
         uint8_t message_type = payload[1 + i];
+
+        _sensors_data.udd_data_types_list.set(static_cast<uint16_t>(message_type));
 
         switch (message_type) {
             case DataType::GPS_INS_TIME_MS: {
@@ -508,6 +512,32 @@ bool Sensor::parse_udd_payload()
         if (message_data_offset > data_end) {
             _diagnostic_data.udd_parse_fail_count++;
             move_message_header_to_buffer_start();
+            return false;
+        }
+    }
+
+    if(!has_udd_required_data_types()) {
+        _diagnostic_data.udd_parse_fail_count++;
+        move_message_header_to_buffer_start();
+        return false;
+    }
+
+    return true;
+}
+
+bool Sensor::has_udd_required_data_types() const
+{
+    static constexpr DataType required_types[] {
+        DataType::GPS_INS_TIME_MS,
+        DataType::ACCEL_DATA_HR,
+        DataType::GYRO_DATA_HR,
+        DataType::UNIT_STATUS,
+        DataType::TEMPERATURE,
+        DataType::INS_SOLUTION_STATUS,
+    };
+
+    for (const DataType type : required_types) {
+        if (!_sensors_data.udd_data_types_list.get(static_cast<uint16_t>(type))) {
             return false;
         }
     }

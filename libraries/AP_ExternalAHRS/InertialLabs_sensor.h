@@ -34,6 +34,9 @@ private:
 
     bool parse_udd_payload();
 
+    bool has_udd_required_data_types() const;
+
+private:
     AP_HAL::UARTDriver *_uart{nullptr};
     int8_t _port_num{-1};
     uint32_t _baudrate{0};
