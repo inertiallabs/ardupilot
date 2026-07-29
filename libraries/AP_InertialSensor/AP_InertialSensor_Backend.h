@@ -362,6 +362,16 @@ protected:
     // function which instantiates an instance of the backend sensor
     // driver if the sensor is available
 
+    // set external AHRS accelerometer instance number
+    void set_external_ahrs_accel_instance_number(int8_t instance) {
+        _imu._external_ahrs_accel_instance_number = instance;
+    }
+
+    // set external AHRS gyro instance number
+    void set_external_ahrs_gyro_instance_number(int8_t instance) {
+        _imu._external_ahrs_gyro_instance_number = instance;
+    }
+
 private:
 
     bool should_log_imu_raw() const ;
