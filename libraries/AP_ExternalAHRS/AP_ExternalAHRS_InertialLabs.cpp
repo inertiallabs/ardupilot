@@ -142,7 +142,23 @@ void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
 
 void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
 {
-    sender.send_sensor_command(sensor, command, data);
+    const ScheduledCommand sc{command, data};
+    WITH_SEMAPHORE(scheduled_command_list_sem);
+    scheduled_command_list.push(sc);
+}
+
+void AP_ExternalAHRS_InertialLabs::perform_scheduled_commands()
+{
+    while (true) {
+        ScheduledCommand sc;
+        {
+            WITH_SEMAPHORE(scheduled_command_list_sem);
+            if (!scheduled_command_list.pop(sc)) {
+                break;
+            }
+        }
+        sender.send_sensor_command(sensor, sc.command, sc.data);
+    }
 }
 
 bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
@@ -191,6 +207,8 @@ InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
     if (!sensor.is_initialized()) {
         return InertialLabs::DataReadStatus::NEED_WAIT;
     }
+
+    perform_scheduled_commands();
 
     WITH_SEMAPHORE(state.sem);
 
