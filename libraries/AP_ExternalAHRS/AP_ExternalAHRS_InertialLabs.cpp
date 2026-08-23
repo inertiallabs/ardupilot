@@ -210,15 +210,17 @@ InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
 
     perform_scheduled_commands();
 
-    WITH_SEMAPHORE(state.sem);
-
     const uint64_t start_time_us = AP_HAL::micros64();
-    InertialLabs::DataReadStatus res = sensor.update_data();
-    if (res != InertialLabs::DataReadStatus::SUCCESS) {
-        return res;
+
+    {
+        WITH_SEMAPHORE(state.sem);
+        const InertialLabs::DataReadStatus res = sensor.update_data();
+        if (res != InertialLabs::DataReadStatus::SUCCESS) {
+            return res;
+        }
+        handle_sensor_data();
     }
 
-    handle_sensor_data();
     send_data_to_sensor();
     write_logs(sensor.get_sensors_data());
 
