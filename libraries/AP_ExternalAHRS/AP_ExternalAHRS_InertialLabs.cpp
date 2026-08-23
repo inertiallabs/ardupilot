@@ -125,6 +125,8 @@ void AP_ExternalAHRS_InertialLabs::get_filter_status(nav_filter_status &status) 
 
 bool AP_ExternalAHRS_InertialLabs::get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const
 {
+    WITH_SEMAPHORE(state.sem);
+
     const InertialLabs::SensorsData &sensors_data = sensor.get_sensors_data();
 
     velVar = sensors_data.ins.kf_vel_covariance.length() * 1.0e-3f * vel_gate_scale;      // m/s
@@ -163,6 +165,7 @@ void AP_ExternalAHRS_InertialLabs::perform_scheduled_commands()
 
 bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
 {
+    WITH_SEMAPHORE(state.sem);
     const InertialLabs::SensorsData &sensors_data = sensor.get_sensors_data();
     wind = sensors_data.ins.wind_speed;
     return true;
