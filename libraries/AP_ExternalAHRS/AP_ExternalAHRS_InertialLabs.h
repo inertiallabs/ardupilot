@@ -28,6 +28,9 @@
 #include "InertialLabs_sender.h"
 #include "InertialLabs_sensor.h"
 
+#include <AP_HAL/Semaphores.h>
+#include <AP_HAL/utility/RingBuffer.h>
+
 class AP_ExternalAHRS_InertialLabs : public AP_ExternalAHRS_backend {
 
 public:
@@ -54,6 +57,8 @@ private:
     void handle_sensor_data();
     void send_data_to_sensor();
 
+    void perform_scheduled_commands();
+
 private:
     InertialLabs::Sensor sensor;
     InertialLabs::Sender sender;
@@ -67,6 +72,13 @@ private:
     InertialLabs::HandledSensorsData handled_sensor_data{};
 
     InertialLabs::DriverDiagnosticData driver_diagnostic_data{};
+
+    struct ScheduledCommand {
+        ExternalAHRS_command command;
+        ExternalAHRS_command_data data;
+    };
+    ObjectBuffer<ScheduledCommand> scheduled_command_list{16};
+    HAL_Semaphore scheduled_command_list_sem;
 };
 
 #endif  // AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
