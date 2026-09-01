@@ -784,7 +784,7 @@ void AP_InertialSensor_Backend::_publish_temperature(uint8_t instance, float tem
 #if HAL_HAVE_IMU_HEATER
     uint8_t heater_imu_instance = AP_HEATER_IMU_INSTANCE;
 #if AP_EXTERNAL_AHRS_ENABLED
-    // If EARS instance is first, use the next instance for the IMU_HEATER
+    // If EAHRS instance is first, use the next instance for the IMU_HEATER
     const int8_t external_ahrs_instance = _imu.get_external_ahrs_accel_instance_number();
     if (external_ahrs_instance == AP_HEATER_IMU_INSTANCE) {
         const uint8_t num_accels = MIN(_imu.get_accel_count(), INS_MAX_INSTANCES);
