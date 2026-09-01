@@ -18,6 +18,10 @@ void AP_InertialSensor_ExternalAHRS::handle_external(const AP_ExternalAHRS::ins_
     if (!started) {
         return;
     }
+    const enum Rotation rotation = (enum Rotation)_imu.get_external_ahrs_orientation();
+    set_gyro_orientation(gyro_instance, rotation);
+    set_accel_orientation(accel_instance, rotation);
+
     Vector3f accel = pkt.accel;
     Vector3f gyro = pkt.gyro;
 
@@ -49,12 +53,6 @@ void AP_InertialSensor_ExternalAHRS::start()
                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 1, DEVTYPE_SERIAL)) &&
         _imu.register_accel(accel_instance, rate,
                             AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 2, DEVTYPE_SERIAL))) {
-
-        // setup sensor rotations
-        rotation = (enum Rotation)_imu.get_external_ahrs_orientation();
-
-        set_gyro_orientation(gyro_instance, rotation);
-        set_accel_orientation(accel_instance, rotation);
 
         set_external_ahrs_gyro_instance_number(gyro_instance);
         set_external_ahrs_accel_instance_number(accel_instance);

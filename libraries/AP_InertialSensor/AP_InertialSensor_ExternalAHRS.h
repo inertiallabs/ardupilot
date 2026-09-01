@@ -23,7 +23,6 @@ public:
 private:
     const uint8_t serial_port;
     bool started;
-    enum Rotation rotation;
 };
 #endif // AP_EXTERNAL_AHRS_ENABLED
 
