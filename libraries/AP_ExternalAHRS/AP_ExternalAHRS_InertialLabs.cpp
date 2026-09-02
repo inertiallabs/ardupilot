@@ -286,7 +286,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
         handled_sensor_data.attitude_timestamp = package_timestamp_ms;
     }
 
-    if (filter_ok && (sensors_data.ins.unit_status & (USW::GYRO_FAIL|USW::ACCEL_FAIL)) == 0) {
+    if ((sensors_data.ins.unit_status & (USW::GYRO_FAIL|USW::ACCEL_FAIL)) == 0) {
         // use IL INS IMU outputs in the ArduPilot algorithm
         state.accel = sensors_data.accel;
         state.gyro = sensors_data.gyro;
