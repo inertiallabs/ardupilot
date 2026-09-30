@@ -281,8 +281,8 @@ void Sender::send_sensor_command(Sensor &sensor,
 {
     switch (command) {
         case ExternalAHRS_command::START_UDD:
-            sensor.write_bytes(InertialLabs::Command::START_UDD,
-                               sizeof(InertialLabs::Command::START_UDD) - 1);
+            sensor.write_bytes(InertialLabs::Command::START,
+                               sizeof(InertialLabs::Command::START) - 1);
             break;
         case ExternalAHRS_command::STOP:
             sensor.write_bytes(InertialLabs::Command::STOP,
