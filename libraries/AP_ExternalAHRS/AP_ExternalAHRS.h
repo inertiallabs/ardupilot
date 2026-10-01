@@ -204,22 +204,18 @@ public:
         return (uint16_t(sensors.get()) & uint16_t(sensor)) != 0;
     }
 
+protected:
+
     enum class OPTIONS {
         VN_UNCOMP_IMU = 1U << 0,
         SBG_EKF_AS_GNSS = 1U << 1,
         SENSAITION_INS = 1U << 2,
-        ILAB_TRANSMIT_AIRSPEED = 1U << 3, // transmit airspeed to IL INS
-        ILAB_SEND_STATUS = 1U << 4, // send IL INS status messages to GCS
-        RESERVED = 1U << 5, // use IL INS estimated wind speed in ArduPilot subsystems
-        ILAB_USE_AIRSPEED = 1U << 6, // use IL INS calculated true airspeed in ArduPilot subsystems
-        ILAB_DISABLE_GPS_TRICK = 1U << 7, // disable IL INS GNSS solution (fix type, number of satellites, DOP) substitution in GNSS-denied environments
     };
-
-protected:
     bool option_is_set(OPTIONS option) const { return (options.get() & int32_t(option)) != 0; }
 
 private:
     AP_ExternalAHRS_backend *backend;
+    static const struct AP_Param::GroupInfo *backend_var_info;
 
     AP_Enum<DevType> devtype;
     AP_Int16         rate;
