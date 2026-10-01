@@ -75,7 +75,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
     // @Description: External AHRS options bitmask
-    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag, 1:SBG uses EKF as GNSS, 2:SensAItion used as AHRS, 3:Transmit airspeed to IL INS, 4:Send IL INS status messages to GCS, 5:Reserved, 6:Use IL INS true airspeed, 7:Disable IL INS GNSS fix type substitution
+    // @Bitmask: 0:Vector Nav use uncompensated values for accel gyro and mag, 1:SBG uses EKF as GNSS, 2:SensAItion used as AHRS
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 3, AP_ExternalAHRS, options, 0),
 
@@ -92,10 +92,16 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Units: Hz
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
+
+    // backend specific parameters, high index to stay clear of parameters added upstream
+    // @Group: _
+    // @Path: AP_ExternalAHRS_InertialLabs.cpp
+    AP_SUBGROUPVARPTR(backend, "_", 30, AP_ExternalAHRS, backend_var_info),
     
     AP_GROUPEND
 };
 
+const AP_Param::GroupInfo *AP_ExternalAHRS::backend_var_info;
 
 void AP_ExternalAHRS::init(void)
 {
@@ -136,6 +142,11 @@ void AP_ExternalAHRS::init(void)
 #if AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
     case DevType::InertialLabs:
         backend = NEW_NOTHROW AP_ExternalAHRS_InertialLabs(this, state);
+        if (backend != nullptr) {
+            backend_var_info = AP_ExternalAHRS_InertialLabs::var_info;
+            AP_Param::load_object_from_eeprom(backend, backend_var_info);
+            AP_Param::invalidate_count();
+        }
         return;
 #endif
 #if AP_EXTERNAL_AHRS_SENSAITION_ENABLED

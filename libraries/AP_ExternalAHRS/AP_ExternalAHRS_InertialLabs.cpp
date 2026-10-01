@@ -37,10 +37,23 @@
 
 extern const AP_HAL::HAL &hal;
 
+const AP_Param::GroupInfo AP_ExternalAHRS_InertialLabs::var_info[] = {
+    // @Param: IL_OPTIONS
+    // @DisplayName: InertialLabs options
+    // @Description: InertialLabs INS specific options bitmask
+    // @Bitmask: 1:Transmit airspeed to INS, 2:Send INS status messages to GCS, 4:Use INS airspeed, 5:Disable INS GNSS fix type substitution
+    // @User: Standard
+    AP_GROUPINFO("IL_OPTIONS", 1, AP_ExternalAHRS_InertialLabs, options, 0),
+
+    AP_GROUPEND
+};
+
 AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_frontend,
                                                            AP_ExternalAHRS::state_t &_state) :
     AP_ExternalAHRS_backend(_frontend, _state)
 {
+    AP_Param::setup_object_defaults(this, var_info);
+
     // don't offer IMU by default, at 200Hz it is too slow for many aircraft
     set_default_sensors(uint16_t(AP_ExternalAHRS::AvailableSensor::GPS) |
                         uint16_t(AP_ExternalAHRS::AvailableSensor::BARO) |
@@ -227,7 +240,7 @@ InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
     send_data_to_sensor();
     write_logs(sensor.get_sensors_data());
 
-    const bool need_send = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_SEND_STATUS);
+    const bool need_send = is_option_set(Options::SEND_STATUS);
     if (need_send)
     {
         sender.send_gcs_messages(sensor.get_sensors_data());
@@ -336,7 +349,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
             gps_data.ned_vel_east = sensors_data.ins.velocity.y;
             gps_data.ned_vel_down = sensors_data.ins.velocity.z;
 
-            const bool gps_sol_trick = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_DISABLE_GPS_TRICK);
+            const bool gps_sol_trick = is_option_set(Options::DISABLE_GPS_TRICK);
             const bool gps_solution = ((sensors_data.ins.unit_status2 & USW2::GNSS_FUSION_OFF) == 0) &&
                                       (sensors_data.gps.gnss_sol_status == InsSolution::GOOD) &&
                                       (sensors_data.gps.fix_type == 2);
@@ -407,7 +420,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
         airspeed_data.airspeed = sensors_data.ins.true_airspeed;
         auto *arsp = AP::airspeed();
         if (arsp != nullptr) {
-            if (option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_USE_AIRSPEED)) {
+            if (is_option_set(Options::USE_AIRSPEED)) {
                 // use IL INS calculated true airspeed
                 bool airspeed_enabled = false;
                 if (filter_ok && GOT_MSG(AIR_DATA_STATUS) && (sensors_data.ins.air_data_status & ADU::AIRSPEED_FAIL) == 0) {
@@ -425,7 +438,7 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 
 void AP_ExternalAHRS_InertialLabs::send_data_to_sensor()
 {
-    const bool transmit_airspeed = option_is_set(AP_ExternalAHRS::OPTIONS::ILAB_TRANSMIT_AIRSPEED);
+    const bool transmit_airspeed = is_option_set(Options::TRANSMIT_AIRSPEED);
     if (transmit_airspeed) {
         const uint16_t inu_data_rate = get_rate(); // Hz
         const uint16_t max_aiding_data_rate = 50; // Hz

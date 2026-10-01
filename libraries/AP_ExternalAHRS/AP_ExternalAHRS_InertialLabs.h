@@ -50,6 +50,8 @@ public:
     const char* get_name() const override { return "ILabs"; }
     uint8_t num_gps_sensors() const override { return 1; }
 
+    static const struct AP_Param::GroupInfo var_info[];
+
 private:
     InertialLabs::DataReadStatus handle_full_circle();
     void update_thread();
@@ -59,7 +61,17 @@ private:
 
     void perform_scheduled_commands();
 
+    enum class Options {
+        TRANSMIT_AIRSPEED = 1U << 1, // transmit airspeed to IL INS
+        SEND_STATUS = 1U << 2, // send IL INS status messages to GCS
+        USE_AIRSPEED = 1U << 4, // use IL INS calibrated airspeed as EAS in ArduPilot subsystems
+        DISABLE_GPS_TRICK = 1U << 5, // disable IL INS GNSS solution (fix type, number of satellites, DOP) substitution in GNSS-denied environments
+    };
+    bool is_option_set(Options option) const { return (options.get() & int32_t(option)) != 0; }
+
 private:
+    AP_Int32 options;
+
     InertialLabs::Sensor sensor;
     InertialLabs::Sender sender;
 
