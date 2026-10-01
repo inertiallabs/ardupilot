@@ -497,6 +497,11 @@ bool Sensor::parse_udd_payload()
                 message_length = sizeof(udd.doppler_velocity_log);
                 break;
             }
+            case DataType::OUTSIDE_AIR_TEMPERATURE: {
+                _sensors_data.outside_air_temperature = static_cast<float>(udd.outside_air_temperature) * 0.01f; // degC
+                message_length = sizeof(udd.outside_air_temperature);
+                break;
+            }
             default: {
                 _diagnostic_data.udd_parse_fail_count++;
                 // GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "ILAB: Unknown message type: %d. UDD format incorrect!",

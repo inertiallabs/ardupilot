@@ -152,6 +152,7 @@ enum DataType : uint8_t {
     EXT_WIND_DATA = 0x62,
     MAG_CLB_ACCURACY = 0x9A,
     DOPPLER_VELOCITY_LOG = 0X67,
+    OUTSIDE_AIR_TEMPERATURE = 0x8C,
 };
 
 // Ins Solutiob Status
@@ -403,6 +404,7 @@ union PACKED UDDMessageData {
     ExtAmbientData ext_ambient_air_data;
     ExtWindData ext_wind_data;
     uint8_t mag_clb_accuracy;       // deg*10
+    int16_t outside_air_temperature; // degC*100
 };
 
 struct GpsData {
@@ -470,10 +472,11 @@ struct SensorsData {
     InsData ins{};
     GpsData gps{};
     ExtData ext{};
-    float pressure{0};        // Pa
-    float diff_press{0};      // Pa
-    float temperature{0};     // degC
-    float supply_voltage{0};  // V
+    float pressure{0};                // Pa
+    float diff_press{0};              // Pa
+    float temperature{0};             // degC
+    float outside_air_temperature{0}; // degC
+    float supply_voltage{0};          // V
     Bitmask<256> udd_data_types_list{};
 };
 
