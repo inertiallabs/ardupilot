@@ -38,6 +38,7 @@ public:
 
 private:
     bool ext_airspeed_enabled;
+    bool is_offset_zeroed{false};
     uint32_t last_message_timestamp; // ms
 
     float sum_pressure;
