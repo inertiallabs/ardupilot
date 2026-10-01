@@ -41,6 +41,11 @@ bool AP_Airspeed_External::has_airspeed()
 
 bool AP_Airspeed_External::get_airspeed(float &airspeed)
 {
+    if (!is_offset_zeroed) {
+        set_use_zero_offset();
+        is_offset_zeroed = true;
+    }
+
     WITH_SEMAPHORE(sem);
     if (airspeed_count == 0) {
         return false;
