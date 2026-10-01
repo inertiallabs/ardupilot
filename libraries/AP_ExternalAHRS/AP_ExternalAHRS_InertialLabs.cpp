@@ -416,7 +416,14 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
     if (GOT_MSG(DIFFERENTIAL_PRESSURE) && GOT_MSG(UNIT_STATUS2) &&
         (sensors_data.ins.unit_status2 & USW2::ADU_DIFF_PRESS_FAIL) == 0) {
         airspeed_data.differential_pressure = sensors_data.diff_press;
-        airspeed_data.temperature = sensors_data.temperature;
+
+        if (GOT_MSG(OUTSIDE_AIR_TEMPERATURE)) {
+            airspeed_data.temperature = sensors_data.outside_air_temperature;
+        }
+        else if (GOT_MSG(TEMPERATURE)) {
+            airspeed_data.temperature = sensors_data.temperature;
+        }
+
         auto *arsp = AP::airspeed();
         if (arsp != nullptr) {
             if (GOT_MSG(CALIBRATED_AIRSPEED)) {

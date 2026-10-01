@@ -73,15 +73,17 @@ void write_logs(const SensorsData &sensors_data)
     // @Field: VWN: Wind velocity north
     // @Field: VWE: Wind velocity east
     // @Field: ArspSF: The scale factor (SF) for measured air speed
+    // @Field: OAT: Outside air temperature
 
-    AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF",
-                                "s-PPOmnnnn-",
-                                "F----------",
-                                "QIfffffffff",
+    AP::logger().WriteStreaming("ILB2", "TimeUS,IMS,Press,Diff,Temp,Alt,TAS,CAS,VWN,VWE,ArspSF,OAT",
+                                "s-PPOmnnnn-O",
+                                "F-----------",
+                                "QIffffffffff",
                                 sensors_data.package_timestamp_us, sensors_data.ins.ms_tow,
                                 sensors_data.pressure, sensors_data.diff_press, sensors_data.temperature,
                                 sensors_data.ins.baro_alt, sensors_data.ins.true_airspeed, sensors_data.ins.calibrated_airspeed,
-                                sensors_data.ins.wind_speed.x, sensors_data.ins.wind_speed.y, sensors_data.ins.airspeed_sf);
+                                sensors_data.ins.wind_speed.x, sensors_data.ins.wind_speed.y, sensors_data.ins.airspeed_sf,
+                                sensors_data.outside_air_temperature);
 
     // @LoggerMessage: ILB3
     // @Description: InertialLabs INS data
