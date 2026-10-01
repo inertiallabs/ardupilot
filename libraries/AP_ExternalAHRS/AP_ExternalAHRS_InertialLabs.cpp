@@ -413,21 +413,19 @@ void AP_ExternalAHRS_InertialLabs::handle_sensor_data()
 
 #if AP_AIRSPEED_EXTERNAL_ENABLED && (APM_BUILD_COPTER_OR_HELI || APM_BUILD_TYPE(APM_BUILD_ArduPlane))
     // only on plane and copter as others do not link AP_Airspeed
-    if (GOT_MSG(DIFFERENTIAL_PRESSURE) && GOT_MSG(TRUE_AIRSPEED) && GOT_MSG(UNIT_STATUS2) &&
+    if (GOT_MSG(DIFFERENTIAL_PRESSURE) && GOT_MSG(UNIT_STATUS2) &&
         (sensors_data.ins.unit_status2 & USW2::ADU_DIFF_PRESS_FAIL) == 0) {
         airspeed_data.differential_pressure = sensors_data.diff_press;
         airspeed_data.temperature = sensors_data.temperature;
-        airspeed_data.airspeed = sensors_data.ins.true_airspeed;
         auto *arsp = AP::airspeed();
         if (arsp != nullptr) {
-            if (is_option_set(Options::USE_AIRSPEED)) {
-                // use IL INS calculated true airspeed
-                bool airspeed_enabled = false;
-                if (filter_ok && GOT_MSG(AIR_DATA_STATUS) && (sensors_data.ins.air_data_status & ADU::AIRSPEED_FAIL) == 0) {
-                    airspeed_enabled = true;
-                }
-                arsp->set_external_airspeed_enabled(airspeed_enabled);
+            if (GOT_MSG(CALIBRATED_AIRSPEED)) {
+                airspeed_data.airspeed = sensors_data.ins.calibrated_airspeed;
             }
+            const bool airspeed_enabled = is_option_set(Options::USE_AIRSPEED) && filter_ok &&
+                GOT_MSG(CALIBRATED_AIRSPEED) &&
+                GOT_MSG(AIR_DATA_STATUS) && (sensors_data.ins.air_data_status & ADU::AIRSPEED_FAIL) == 0;
+            arsp->set_external_airspeed_enabled(airspeed_enabled);
             arsp->handle_external(airspeed_data);
         }
     }
