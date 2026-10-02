@@ -143,7 +143,11 @@ void SITL_State::wait_clock(uint64_t wait_time_usec)
                 }
             }
 #endif
-            usleep(1000);
+            // most devices can't sleep for 10us - so this is also
+            // essentially a yield.  At 30x speedup a 10us wall-clock
+            // sleep here can equate to your thread sleeping for 300us
+            // of simulated time
+            usleep(10);
         }
     }
     // check the outbound TCP queue size.  If it is too long then
