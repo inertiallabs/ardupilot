@@ -255,12 +255,12 @@ enum SpoofingStatus : uint8_t {
 };
 
 struct PACKED SensorBias {
-    int8_t gyroX{0};  // deg/s*0.5*1e5
-    int8_t gyroY{0};  // deg/s*0.5*1e5
-    int8_t gyroZ{0};  // deg/s*0.5*1e5
-    int8_t accX{0};   // g*0.5*1e6
-    int8_t accY{0};   // g*0.5*1e6
-    int8_t accZ{0};   // g*0.5*1e6
+    int8_t gyroX{0};  // deg/s*0.5*1e4
+    int8_t gyroY{0};  // deg/s*0.5*1e4
+    int8_t gyroZ{0};  // deg/s*0.5*1e4
+    int8_t accX{0};   // g*0.5*1e5
+    int8_t accY{0};   // g*0.5*1e5
+    int8_t accZ{0};   // g*0.5*1e5
     int8_t reserved{0};
 };
 
