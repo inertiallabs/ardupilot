@@ -21,13 +21,57 @@
 
 using namespace SITL;
 
-InertialLabs::InertialLabs() : SerialDevice::SerialDevice()
+namespace {
+
+// gravity the device uses for accelerations in g (ICD)
+constexpr float IL_GRAVITY_MSS = 9.8106f;
+
+// unit status word 2 bits
+constexpr uint16_t USW2_GNSS_INPUT_OFF = 1U << 7;
+constexpr uint16_t USW2_GNSS_POS_INVALID = 1U << 10;
+
+// navigation solution status
+constexpr uint8_t NSS_GOOD = 0;
+constexpr uint8_t NSS_AUTONOMOUS = 4;
+
+// 0x41 New GPS bits
+constexpr uint8_t NEW_GNSS_POSITION = 1U << 0;
+constexpr uint8_t NEW_GNSS_VELOCITY = 1U << 1;
+
+// GNSS solution status
+constexpr uint8_t GNSS_SOL_COMPUTED = 0;
+constexpr uint8_t GNSS_SOL_INSUFFICIENT_OBS = 1;
+
+// new aiding data bits
+constexpr uint16_t NAD_AIRSPEED = 1U << 1;
+constexpr uint16_t NAD_WIND = 1U << 2;
+constexpr uint16_t NAD_EXT_POSITION = 1U << 3;
+constexpr uint16_t NAD_EXT_HEADING = 1U << 5;
+constexpr uint16_t NAD_AMBIENT_AIR = 1U << 10;
+constexpr uint16_t NAD_EXT_ALTITUDE = 1U << 11;
+constexpr uint16_t NAD_EXT_HOR_POSITION = 1U << 13;
+
+// copy an aiding data item if it has the expected size
+bool copy_aiding_data(void *dest, size_t size, const uint8_t *data, uint16_t len)
+{
+    if (len != size) {
+        return false;
+    }
+    memcpy(dest, data, size);
+    return true;
+}
+
+}  // namespace
+
+// the transmit buffer holds many packets, so a late reader gets delayed rather than truncated data
+InertialLabs::InertialLabs() : SerialDevice::SerialDevice(8192, 512)
 {
 }
 
 void InertialLabs::send_packet(void)
 {
     const auto &fdm = _sitl->state;
+    const bool gnss_available = _sitl->gps[0].enabled;
 
     pkt.msg_len = sizeof(pkt)-2;
 
@@ -38,9 +82,9 @@ void InertialLabs::send_packet(void)
 
     // 0x23 Accelerometer data HR
     const float accel_noise = 0.005f; // g
-    pkt.accel_data_hr.x = ((fdm.yAccel / GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6;  // g*1.0e6
-    pkt.accel_data_hr.y = ((fdm.xAccel / GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6;  // g*1.0e6
-    pkt.accel_data_hr.z = ((-fdm.zAccel / GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6; // g*1.0e6
+    pkt.accel_data_hr.x = ((fdm.yAccel / IL_GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6;  // g*1.0e6
+    pkt.accel_data_hr.y = ((fdm.xAccel / IL_GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6;  // g*1.0e6
+    pkt.accel_data_hr.z = ((-fdm.zAccel / IL_GRAVITY_MSS) + accel_noise * rand_float()) * 1.0e6; // g*1.0e6
 
     // 0x21 Gyro data HR
     const float gyro_noise = 0.05f; // deg/s
@@ -61,12 +105,12 @@ void InertialLabs::send_packet(void)
     pkt.mag_data.z = ((-fdm.bodyMagField.z / NTESLA_TO_MGAUSS) + mag_noise * rand_float()) * 0.1f; // nT/10
 
     // 0x26 Sensors bias
-    pkt.sensor_bias.gyroX = 0; // deg/s*0.5*10e4
-    pkt.sensor_bias.gyroY = 0; // deg/s*0.5*10e4
-    pkt.sensor_bias.gyroZ = 0; // deg/s*0.5*10e4
-    pkt.sensor_bias.accX = 0; // g*0.5*10e5
-    pkt.sensor_bias.accY = 0; // g*0.5*10e5
-    pkt.sensor_bias.accZ = 0; // g*0.5*10e5
+    pkt.sensor_bias.gyroX = 0; // deg/s*0.5*1e4
+    pkt.sensor_bias.gyroY = 0; // deg/s*0.5*1e4
+    pkt.sensor_bias.gyroZ = 0; // deg/s*0.5*1e4
+    pkt.sensor_bias.accX = 0; // g*0.5*1e5
+    pkt.sensor_bias.accY = 0; // g*0.5*1e5
+    pkt.sensor_bias.accZ = 0; // g*0.5*1e5
     pkt.sensor_bias.reserved = 0;
 
     // 0x07 Orientation angles
@@ -97,7 +141,7 @@ void InertialLabs::send_packet(void)
     pkt.differential_pressure = fdm.airspeed_raw_pressure[0] * 100.0f; // mbar*1.0e4
 
     // 0x86 True airspeed (TAS)
-    pkt.true_airspeed = fdm.airspeed * 100.0f; // m/s*100
+    pkt.true_airspeed = fdm.airspeed * AP_Baro::get_EAS2TAS_for_alt_amsl(fdm.altitude) * 100.0f; // m/s*100
 
     // 0x85 Calibrated airspeed (CAS)
     pkt.calibrated_airspeed = fdm.airspeed * 100.0f; // m/s*100
@@ -117,10 +161,16 @@ void InertialLabs::send_packet(void)
     pkt.temperature = KELVIN_TO_C(t_K) * 10; // degC
 
     // 0x5A Unit status word (USW2)
-    pkt.unit_status2 = 0; // INS data is valid
+    pkt.unit_status2 = 0;
+    if (!gnss_input_enabled) {
+        pkt.unit_status2 |= USW2_GNSS_INPUT_OFF;
+    }
+    if (!gnss_available) {
+        pkt.unit_status2 |= USW2_GNSS_POS_INVALID;
+    }
 
     // 0x54 INS (Navigation) solution status
-    pkt.ins_sol_status = 0; // INS solution is good
+    pkt.ins_sol_status = gnss_available ? NSS_GOOD : NSS_AUTONOMOUS;
 
     // 0x5f INS position and velocity accuracy
     pkt.ins_accuracy.lat = 100; // m*1000
@@ -130,44 +180,15 @@ void InertialLabs::send_packet(void)
     pkt.ins_accuracy.north_vel = 10; // m/s*1000
     pkt.ins_accuracy.ver_vel = 10; // m/s*1000
 
-    // 0x65 New aiding data
-    pkt.new_aiding_data = 0;
-
-    // 0xA1 New aiding data 2
-    pkt.new_aiding_data2 = 0;
-
-    // 0x61 External Air or ground speed
-    pkt.external_speed = 0; // kt*100
-
-    // 0x6E External horizontal position
-    pkt.ext_hor_pos.lat = 0; // deg*1.0e7
-    pkt.ext_hor_pos.lon = 0; // deg*1.0e7
-    pkt.ext_hor_pos.lat_std = 0; // m*100
-    pkt.ext_hor_pos.lon_std = 0; // m*100
-    pkt.ext_hor_pos.pos_latency = 0; // sec*1000
-
-    // 0x6C Altitude external
-    pkt.ext_alt.alt = 0; // m*1000
-    pkt.ext_alt.alt_std = 0; // m*100
-
-    // 0x66 Heading external
-    pkt.ext_heading.heading = 0; // deg*100
-    pkt.ext_heading.std = 0; // deg*100
-    pkt.ext_heading.latency = 0; // sec*1000
-
-    // 0x6B External ambient air data
-    pkt.ext_ambient_data.air_temp = 0; // degC*10
-    pkt.ext_ambient_data.alt = 0; // m*100
-    pkt.ext_ambient_data.abs_press = 0; // Pa/2
-
-    // 0x62 External wind data
-    pkt.ext_wind_data.n_wind_vel = 0; // kt*100
-    pkt.ext_wind_data.e_wind_vel = 0; // kt*100
-    pkt.ext_wind_data.n_std_wind = 0; // kt*100
-    pkt.ext_wind_data.e_std_wind = 0; // kt*100
+    // 0x65 New aiding data, the external data items keep the last aiding data received
+    pkt.new_aiding_data = received_aiding_data;
+    received_aiding_data = 0;
 
     // 0x9A
     pkt.mag_clb_accuracy = 0;
+
+    // 0x8C Outside air temperature (OAT)
+    pkt.outside_air_temperature = KELVIN_TO_C(t_K) * 100; // degC*100
 
     pkt.gnss_new_data = 0;
 
@@ -176,39 +197,42 @@ void InertialLabs::send_packet(void)
         pkt.gps_week = gps_tow.week;
 
         // 0x4A GNSS extended info
-        pkt.gnss_extended_info.fix_type = 2; // 3D fix
+        pkt.gnss_extended_info.fix_type = gnss_available ? 2 : 0; // 3D fix or no fix
         pkt.gnss_extended_info.spoofing_status = 1; // no spoofing indicated
 
-        // 0x30 GNSS Position
-        pkt.gnss_position.lat = fdm.latitude * 1e7;  // deg*1.0e7
-        pkt.gnss_position.lon = fdm.longitude * 1e7; // deg*1.0e7
-        pkt.gnss_position.alt = fdm.altitude * 1e2;  // m*100
+        if (gnss_available) {
+            // 0x30 GNSS Position
+            pkt.gnss_position.lat = fdm.latitude * 1e7;  // deg*1.0e7
+            pkt.gnss_position.lon = fdm.longitude * 1e7; // deg*1.0e7
+            pkt.gnss_position.alt = fdm.altitude * 1e2;  // m*100
 
-        // 0x32 GNSS Velocity, Track over ground
-        Vector2d track{fdm.speedN, fdm.speedE};
-        pkt.gnss_vel_track.hor_speed = norm(fdm.speedN, fdm.speedE) * 100.0f; // m/s*100
-        pkt.gnss_vel_track.track_over_ground = wrap_360(degrees(track.angle())) * 100.0f; // deg*100
-        pkt.gnss_vel_track.ver_speed = -fdm.speedD * 100.0f; // m/s*100
+            // 0x32 GNSS Velocity, Track over ground
+            Vector2d track{fdm.speedN, fdm.speedE};
+            pkt.gnss_vel_track.hor_speed = norm(fdm.speedN, fdm.speedE) * 100.0f; // m/s*100
+            pkt.gnss_vel_track.track_over_ground = wrap_360(degrees(track.angle())) * 100.0f; // deg*100
+            pkt.gnss_vel_track.ver_speed = -fdm.speedD * 100.0f; // m/s*100
 
-        // 0x3E GNSS Position timestamp
-        pkt.gnss_pos_timestamp = gps_tow.ms;
+            // 0x3E GNSS Position timestamp
+            pkt.gnss_pos_timestamp = gps_tow.ms;
+        }
 
-        // 0x41 New GPS
-        pkt.gnss_new_data = 127; // GNSS data updated
+        // 0x41 New GPS, the receiver keeps reporting also without a fix
+        pkt.gnss_new_data = NEW_GNSS_POSITION | NEW_GNSS_VELOCITY;
 
         // 0xС0 u-blox jamming status
         pkt.gnss_jam_status = 1; // ok (no significant jamming)
 
         // 0x42 Dilution of precision
-        pkt.gnss_dop.gdop = 1000; // *1.0e3
-        pkt.gnss_dop.pdop = 1000; // *1.0e3
-        pkt.gnss_dop.hdop = 1000; // *1.0e3
-        pkt.gnss_dop.vdop = 1000; // *1.0e3
-        pkt.gnss_dop.tdop = 1000; // *1.0e3
+        const uint16_t dop = gnss_available ? 1000 : UINT16_MAX; // *1.0e3
+        pkt.gnss_dop.gdop = dop;
+        pkt.gnss_dop.pdop = dop;
+        pkt.gnss_dop.hdop = dop;
+        pkt.gnss_dop.vdop = dop;
+        pkt.gnss_dop.tdop = dop;
 
-        // 0x37 Full satellites info
-        pkt.full_sat_info.SVs = 32;
-        pkt.full_sat_info.SolnSVs = 32;
+        // 0x37 Full satellites info, no satellites are used when the GNSS data input is off
+        pkt.full_sat_info.SVs = gnss_available ? 32 : 0;
+        pkt.full_sat_info.SolnSVs = (gnss_available && gnss_input_enabled) ? 32 : 0;
         pkt.full_sat_info.SolnL1SVs = 0;
         pkt.full_sat_info.SolnMultiSVs = 0;
         pkt.full_sat_info.signal_used1 = 127;
@@ -220,7 +244,7 @@ void InertialLabs::send_packet(void)
         pkt.gnss_vel_latency = 5; // ms
 
         // 0x38 GNSS Solution status
-        pkt.gnss_sol_status = 0; // solution computed
+        pkt.gnss_sol_status = gnss_available ? GNSS_SOL_COMPUTED : GNSS_SOL_INSUFFICIENT_OBS;
 
         // 0x39 GNSS Position or Velocity type
         pkt.gnss_pos_vel_type = 16; // single point position
@@ -229,25 +253,165 @@ void InertialLabs::send_packet(void)
     const uint8_t *buffer = (const uint8_t *)&pkt;
     pkt.crc = crc_sum_of_bytes_16(&buffer[2], sizeof(pkt)-4);
 
-    write_to_autopilot((char *)&pkt, sizeof(pkt));
+    // a packet that does not fit is dropped whole, as a truncated packet would corrupt the stream
+    if (to_autopilot->space() >= sizeof(pkt)) {
+        write_to_autopilot((char *)&pkt, sizeof(pkt));
+    }
 
     packets_sent++;
 }
 
+/*
+  handle commands and aiding data received from the autopilot
+ */
+void InertialLabs::receive_data(void)
+{
+    const auto consume = [this](uint8_t n) {
+        memmove(rx_buf, &rx_buf[n], rx_len - n);
+        rx_len -= n;
+    };
+
+    while (true) {
+        const ssize_t n = read_from_autopilot((char *)&rx_buf[rx_len], sizeof(rx_buf) - rx_len);
+        if (n <= 0) {
+            return;
+        }
+        rx_len += n;
+
+        // ILPP packet: 0xAA 0x55, message type, message ID, length (packet length - 2), payload, checksum
+        while (rx_len >= 6) {
+            const uint16_t packet_len = (rx_buf[4] | (rx_buf[5] << 8)) + 2;
+            if (rx_buf[0] != 0xAA || rx_buf[1] != 0x55 || packet_len < 9 || packet_len > sizeof(rx_buf)) {
+                consume(1);
+                continue;
+            }
+            if (rx_len < packet_len) {
+                break;
+            }
+            const uint16_t checksum = rx_buf[packet_len - 2] | (rx_buf[packet_len - 1] << 8);
+            if (crc_sum_of_bytes_16(&rx_buf[2], packet_len - 4) != checksum) {
+                consume(1);
+                continue;
+            }
+            handle_packet(rx_buf[2], rx_buf[3], &rx_buf[6], packet_len - 8);
+            consume(packet_len);
+        }
+    }
+}
+
+void InertialLabs::handle_packet(uint8_t msg_type, uint8_t msg_id, const uint8_t *payload, uint16_t payload_len)
+{
+    if (msg_type == 0x00 && msg_id == 0x00 && payload_len == 1) {
+        // command (ICD 5.3), the simulated device always outputs UDD set 1
+        switch (payload[0]) {
+        case 0xFE: // Stop_cmd
+            streaming = false;
+            break;
+        case 0xFD: // Start_cmd
+        case 0x95: // User_Def_Data_1..4 startup commands
+        case 0xC5:
+        case 0xC8:
+        case 0xCB:
+            streaming = true;
+            break;
+        case 0x71: // GNSS data input on
+            gnss_input_enabled = true;
+            break;
+        case 0x72: // GNSS data input off
+            gnss_input_enabled = false;
+            break;
+        }
+        return;
+    }
+    if (msg_type == 0x01 && msg_id == 0x62 && payload_len >= 2 && payload[0] == 1) {
+        // aiding data packet with a single data item: count, type, data (ICD 6.5.1)
+        handle_aiding_data(payload[1], &payload[2], payload_len - 2);
+    }
+}
 
 /*
-  send InertialLabs data
+  store aiding data, reported back in the corresponding UDD data items
+ */
+void InertialLabs::handle_aiding_data(uint8_t type, const uint8_t *data, uint16_t len)
+{
+    switch (type) {
+    case 0x02: // airspeed
+        if (copy_aiding_data(&pkt.external_speed, sizeof(pkt.external_speed), data, len)) {
+            received_aiding_data |= NAD_AIRSPEED;
+        }
+        break;
+    case 0x03: // wind
+        if (copy_aiding_data(&pkt.ext_wind_data, sizeof(pkt.ext_wind_data), data, len)) {
+            received_aiding_data |= NAD_WIND;
+        }
+        break;
+    case 0x04: { // position, reported in the horizontal position and altitude items
+        struct PACKED {
+            int32_t lat, lon, alt;
+            uint16_t lat_std, lon_std, alt_std, latency;
+        } pos;
+        if (copy_aiding_data(&pos, sizeof(pos), data, len)) {
+            pkt.ext_hor_pos.lat = pos.lat;
+            pkt.ext_hor_pos.lon = pos.lon;
+            pkt.ext_hor_pos.lat_std = pos.lat_std;
+            pkt.ext_hor_pos.lon_std = pos.lon_std;
+            pkt.ext_hor_pos.pos_latency = pos.latency;
+            pkt.ext_alt.alt = pos.alt;
+            pkt.ext_alt.alt_std = pos.alt_std;
+            received_aiding_data |= NAD_EXT_POSITION;
+        }
+        break;
+    }
+    case 0x06: // heading
+        if (copy_aiding_data(&pkt.ext_heading, sizeof(pkt.ext_heading), data, len)) {
+            received_aiding_data |= NAD_EXT_HEADING;
+        }
+        break;
+    case 0x0B: // ambient air data
+        if (copy_aiding_data(&pkt.ext_ambient_data, sizeof(pkt.ext_ambient_data), data, len)) {
+            received_aiding_data |= NAD_AMBIENT_AIR;
+        }
+        break;
+    case 0x0C: // altitude
+        if (copy_aiding_data(&pkt.ext_alt, sizeof(pkt.ext_alt), data, len)) {
+            received_aiding_data |= NAD_EXT_ALTITUDE;
+        }
+        break;
+    case 0x0E: // horizontal position
+        if (copy_aiding_data(&pkt.ext_hor_pos, sizeof(pkt.ext_hor_pos), data, len)) {
+            received_aiding_data |= NAD_EXT_HOR_POSITION;
+        }
+        break;
+    }
+}
+
+/*
+  receive commands and send InertialLabs data
  */
 void InertialLabs::update(void)
 {
     if (!init_sitl_pointer()) {
         return;
     }
-    const uint32_t us_between_packets = 5000; // 200Hz
-    const uint32_t now = AP_HAL::micros();
-    if (now - last_pkt_us >= us_between_packets) {
-        last_pkt_us = now;
-        send_packet();
+    if (!gps_enable_checked) {
+        // the INS GNSS receiver is simulated GPS1, enabled by default as in SIM_GPS
+        if (!_sitl->gps[0].enabled.configured()) {
+            _sitl->gps[0].enabled.set(1);
+        }
+        gps_enable_checked = true;
     }
 
+    receive_data();
+
+    const uint32_t us_between_packets = 1000000UL / pkt_rate_hz;
+    const uint32_t now = AP_HAL::micros();
+    if (now - last_pkt_us < us_between_packets) {
+        return;
+    }
+    // keep the average rate independent of the simulation step, without a burst after a pause
+    last_pkt_us = (now - last_pkt_us < 2 * us_between_packets) ? last_pkt_us + us_between_packets : now;
+
+    if (streaming) {
+        send_packet();
+    }
 }

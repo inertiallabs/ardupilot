@@ -2,9 +2,11 @@
 //PARAMS:
 // param set AHRS_EKF_TYPE 11
 // param set EAHRS_TYPE 5
+// param set EAHRS_RATE 400
 // param set SERIAL4_PROTOCOL 36
-// param set SERIAL4_BAUD 460800
+// param set SERIAL4_BAUD 921600
 // sim_vehicle.py -v ArduPlane -D --console --map -A --serial4=sim:ILabs
+// SIM_GPS1_ENABLE=0 simulates loss of the INS GNSS
 #pragma once
 
 #include "SIM_Aircraft.h"
@@ -26,6 +28,9 @@ public:
 
 private:
     void send_packet(void);
+    void receive_data(void);
+    void handle_packet(uint8_t msg_type, uint8_t msg_id, const uint8_t *payload, uint16_t payload_len);
+    void handle_aiding_data(uint8_t type, const uint8_t *data, uint16_t len);
 
     struct PACKED vec3_16_t {
         int16_t x,y,z;
@@ -41,12 +46,11 @@ private:
         uint8_t msg_id = 0x95;
         uint16_t msg_len; // total packet length-2
 
-        // send Table4, 41 messages
-        uint8_t num_messages = 41;
-        uint8_t messages[41] = {
+        uint8_t num_messages = 42;
+        uint8_t messages[42] = {
             0x01, 0x3C, 0x23, 0x21, 0x25, 0x24, 0x26, 0x07, 0x12, 0x10, 0x53, 0x4A, 0x30, 0x32, 0x3E,
             0x41, 0xC0, 0x28, 0x86, 0x85, 0x8A, 0x8D, 0x50, 0x52, 0x5A, 0x42, 0x54, 0x5F, 0x37, 0x3D,
-            0x38, 0x39, 0x65, 0xA1, 0x61, 0x6E, 0x6C, 0x66, 0x6B, 0x62, 0x9A
+            0x38, 0x39, 0x65, 0xA1, 0x61, 0x6E, 0x6C, 0x66, 0x6B, 0x62, 0x9A, 0x8C
             };
 
         uint32_t gps_time_ms;
@@ -164,15 +168,23 @@ private:
             uint16_t e_std_wind;
         } ext_wind_data;
         uint8_t mag_clb_accuracy;
+        int16_t outside_air_temperature;
         uint16_t crc;
     } pkt;
 
     uint32_t last_pkt_us;
-    const uint16_t pkt_rate_hz = 200;
+    const uint16_t pkt_rate_hz = 400;
     const uint16_t gps_rate_hz = 10;
     const uint16_t gps_frequency = pkt_rate_hz / gps_rate_hz;
     uint32_t packets_sent;
+
+    bool streaming = true;          // stopped by Stop_cmd, restarted by startup commands
+    bool gnss_input_enabled = true; // switched by the GNSS data input on/off commands
+    bool gps_enable_checked;
+    uint16_t received_aiding_data;  // New Aiding Data bits since the last packet
+
+    uint8_t rx_buf[64];
+    uint8_t rx_len;
 };
 
 }
-
