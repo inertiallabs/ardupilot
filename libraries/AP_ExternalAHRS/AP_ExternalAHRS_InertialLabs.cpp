@@ -186,7 +186,12 @@ bool AP_ExternalAHRS_InertialLabs::get_wind_estimation(Vector3f &wind)
 
 void AP_ExternalAHRS_InertialLabs::send_eahrs_status_flag(GCS_MAVLINK &link) const
 {
-    sender.send_gcs_eahrs_status_flags(link, sensor.get_sensors_data());
+    InertialLabs::SensorsData sensors_data;
+    {
+        WITH_SEMAPHORE(state.sem);
+        sensors_data = sensor.get_sensors_data();
+    }
+    sender.send_gcs_eahrs_status_flags(link, sensors_data);
 }
 
 void AP_ExternalAHRS_InertialLabs::format_status(class ExpandingString &str)
@@ -216,6 +221,16 @@ void AP_ExternalAHRS_InertialLabs::update()
 {
     // A separate thread already processes the data in a loop.
     // Don't call handle_full_circle() here. It may cause a race condition.
+    if (is_option_set(Options::SEND_STATUS)) {
+        InertialLabs::SensorsData sensors_data;
+        {
+            WITH_SEMAPHORE(state.sem);
+            sensors_data = sensor.get_sensors_data();
+        }
+        if (sensors_data.package_timestamp_us != 0) {
+            sender.send_gcs_messages(sensors_data);
+        }
+    }
 }
 
 InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
@@ -239,12 +254,6 @@ InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
 
     send_data_to_sensor();
     write_logs(sensor.get_sensors_data());
-
-    const bool need_send = is_option_set(Options::SEND_STATUS);
-    if (need_send)
-    {
-        sender.send_gcs_messages(sensor.get_sensors_data());
-    }
 
     const uint64_t finish_time_us = AP_HAL::micros64();
 
