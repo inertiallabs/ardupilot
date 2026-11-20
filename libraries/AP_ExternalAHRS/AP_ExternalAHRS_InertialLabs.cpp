@@ -54,10 +54,7 @@ AP_ExternalAHRS_InertialLabs::AP_ExternalAHRS_InertialLabs(AP_ExternalAHRS *_fro
 {
     AP_Param::setup_object_defaults(this, var_info);
 
-    // don't offer IMU by default, at 200Hz it is too slow for many aircraft
-    set_default_sensors(uint16_t(AP_ExternalAHRS::AvailableSensor::GPS) |
-                        uint16_t(AP_ExternalAHRS::AvailableSensor::BARO) |
-                        uint16_t(AP_ExternalAHRS::AvailableSensor::COMPASS));
+    set_default_sensors(0);
 
     if (get_port() < 0) {
         return;
@@ -90,6 +87,15 @@ bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t fail
     if (!sensor.is_initialized()) {
         hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs setup failed");
         return false;
+    }
+    if (!AP::externalAHRS().has_sensor(AP_ExternalAHRS::AvailableSensor::GPS)) {
+        for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
+            if (AP::gps().get_type(i) == AP_GPS::GPS_TYPE_EXTERNAL_AHRS) {
+                hal.util->snprintf(failure_msg, failure_msg_len, "GPS%u_TYPE=%u needs EAHRS_SENSORS GPS",
+                                   unsigned(i + 1), unsigned(AP_GPS::GPS_TYPE_EXTERNAL_AHRS));
+                return false;
+            }
+        }
     }
     if (!healthy()) {
         hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs unhealthy");
