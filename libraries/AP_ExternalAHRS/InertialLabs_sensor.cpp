@@ -109,6 +109,10 @@ const SensorDiagnosticData & Sensor::get_diagnostic_data() const
 
 void Sensor::write_bytes(const char *bytes, uint8_t len)
 {
+    if (_uart == nullptr) {
+        _diagnostic_data.uart_write_fail_count++;
+        return;
+    }
     const size_t nwritten = _uart->write(reinterpret_cast<const uint8_t *>(bytes), len);
     if (nwritten != len) {
         _diagnostic_data.uart_write_fail_count++;
