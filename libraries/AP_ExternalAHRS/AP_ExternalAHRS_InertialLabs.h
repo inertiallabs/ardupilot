@@ -41,7 +41,6 @@ public:
     bool pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const override;
     void get_filter_status(nav_filter_status &status) const override;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const override;
-    void write_bytes(const char *bytes, uint8_t len) override;
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data) override;
     bool get_wind_estimation(Vector3f &wind) override;
     void send_eahrs_status_flag(class GCS_MAVLINK &link) const override;

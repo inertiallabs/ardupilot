@@ -162,11 +162,6 @@ bool AP_ExternalAHRS_InertialLabs::get_variances(float &velVar, float &posVar, f
     return true;
 }
 
-void AP_ExternalAHRS_InertialLabs::write_bytes(const char *bytes, uint8_t len)
-{
-    sensor.write_bytes(bytes, len);
-}
-
 void AP_ExternalAHRS_InertialLabs::handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data)
 {
     const ScheduledCommand sc{command, data};

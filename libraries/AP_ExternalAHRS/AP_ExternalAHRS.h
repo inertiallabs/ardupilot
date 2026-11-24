@@ -137,7 +137,6 @@ public:
     void send_status_report(GCS_MAVLINK &link) const;
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const;
     bool get_wind_estimation(Vector3f &wind) const;
-    void write_bytes(const char *bytes, uint8_t len);
     void handle_command(ExternalAHRS_command command, const ExternalAHRS_command_data &data);
     void send_eahrs_status_flag(GCS_MAVLINK &link) const;
     void format_status(ExpandingString &str);
