@@ -68,13 +68,7 @@ bool Sensor::init()
     // We assume the user has already configured the device
     // Open port in the thread
     _uart->begin(_baudrate, 1024, 512);
-    _is_initialized = true;
     return true;
-}
-
-bool Sensor::is_initialized() const
-{
-    return _is_initialized;
 }
 
 int8_t Sensor::get_port() const

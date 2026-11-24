@@ -79,7 +79,8 @@ bool AP_ExternalAHRS_InertialLabs::healthy() const
 
 bool AP_ExternalAHRS_InertialLabs::initialised() const
 {
-    return sensor.is_initialized();
+    WITH_SEMAPHORE(state.sem);
+    return handled_sensor_data.attitude_timestamp != 0;
 }
 
 bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const

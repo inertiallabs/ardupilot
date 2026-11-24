@@ -20,7 +20,6 @@ public:
     ~Sensor()                         = default;
 
     bool init();
-    bool is_initialized() const;
     int8_t get_port() const;
 
     DataReadStatus update_data();
@@ -40,8 +39,6 @@ private:
     AP_HAL::UARTDriver *_uart{nullptr};
     int8_t _port_num{-1};
     uint32_t _baudrate{0};
-
-    bool _is_initialized{false};
 
     uint8_t _buf[BUFFER_SIZE]{};
     uint16_t _buf_offset{0};
