@@ -86,8 +86,8 @@ bool AP_ExternalAHRS_InertialLabs::initialised() const
 
 bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const
 {
-    if (!sensor.is_initialized()) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs setup failed");
+    if (get_port() < 0) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs no AHRS serial port");
         return false;
     }
     if (!AP::externalAHRS().has_sensor(AP_ExternalAHRS::AvailableSensor::GPS)) {
@@ -247,10 +247,6 @@ void AP_ExternalAHRS_InertialLabs::update()
 
 InertialLabs::DataReadStatus AP_ExternalAHRS_InertialLabs::handle_full_circle()
 {
-    if (!sensor.is_initialized()) {
-        return InertialLabs::DataReadStatus::NEED_WAIT;
-    }
-
     perform_scheduled_commands();
 
     const uint64_t start_time_us = AP_HAL::micros64();
