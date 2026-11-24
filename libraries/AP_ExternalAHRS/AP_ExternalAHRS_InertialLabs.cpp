@@ -74,7 +74,8 @@ int8_t AP_ExternalAHRS_InertialLabs::get_port() const
 bool AP_ExternalAHRS_InertialLabs::healthy() const
 {
     WITH_SEMAPHORE(state.sem);
-    return AP_HAL::millis() - handled_sensor_data.attitude_timestamp < 100;
+    return handled_sensor_data.attitude_timestamp != 0 &&
+           AP_HAL::millis() - handled_sensor_data.attitude_timestamp < 100;
 }
 
 bool AP_ExternalAHRS_InertialLabs::initialised() const
