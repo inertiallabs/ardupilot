@@ -163,7 +163,7 @@ enum InsSolution {
     NO_HEADING_CORRECTION      = 3,
     AUTONOMOUS_MODE            = 4,
     NO_GNSS_AIDING_DATA        = 5,
-    AUTONIMUS_TIME_EXCEEDED    = 6,
+    AUTONOMOUS_TIME_EXCEEDED   = 6,
     ZUPT_MODE                  = 7,
     INVALID                    = 8,
 };
