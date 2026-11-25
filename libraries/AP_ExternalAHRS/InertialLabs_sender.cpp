@@ -185,11 +185,11 @@ void Sender::send_gcs_messages(const SensorsData &sensors_data)
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS no spoofing");
         }
 
-        if (state.last_spoof_status == 2) {
+        if (sensors_data.gps.spoof_status == 2) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS spoofing indicated");
         }
 
-        if (state.last_spoof_status == 3) {
+        if (sensors_data.gps.spoof_status == 3) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ILAB: GNSS multiple spoofing indicated");
         }
 
