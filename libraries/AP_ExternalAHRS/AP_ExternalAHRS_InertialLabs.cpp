@@ -22,6 +22,7 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
+#include <AP_AHRS/AP_AHRS.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_GPS/AP_GPS.h>
@@ -86,6 +87,10 @@ bool AP_ExternalAHRS_InertialLabs::initialised() const
 
 bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t failure_msg_len) const
 {
+    using InertialLabs::InsSolution;
+    using InertialLabs::USW;
+    using InertialLabs::USW2;
+
     if (get_port() < 0) {
         hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs no AHRS serial port");
         return false;
@@ -99,17 +104,91 @@ bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t fail
             }
         }
     }
-    if (!healthy()) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs unhealthy");
+
+    uint64_t package_timestamp_us;
+    uint16_t unit_status;
+    uint16_t unit_status2;
+    uint8_t ins_sol_status;
+    bool checksum_errors;
+    bool udd_errors;
+    {
+        WITH_SEMAPHORE(state.sem);
+        const InertialLabs::SensorsData &sensors_data = sensor.get_sensors_data();
+        const InertialLabs::SensorDiagnosticData &diagnostic_data = sensor.get_diagnostic_data();
+        package_timestamp_us = sensors_data.package_timestamp_us;
+        unit_status = sensors_data.ins.unit_status;
+        unit_status2 = sensors_data.ins.unit_status2;
+        ins_sol_status = sensors_data.ins.ins_sol_status;
+        checksum_errors = diagnostic_data.checksum_fail_count != 0;
+        udd_errors = diagnostic_data.udd_parse_fail_count != 0;
+    }
+
+    if (package_timestamp_us == 0 || AP_HAL::micros64() - package_timestamp_us >= 100000) {
+        if (package_timestamp_us != 0) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs data stale");
+        } else if (udd_errors) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs UDD format mismatch");
+        } else if (checksum_errors) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs checksum errors");
+        } else {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs no data");
+        }
         return false;
     }
-    WITH_SEMAPHORE(state.sem);
-    uint32_t now = AP_HAL::millis();
-    const uint32_t dt_limit = 10;
-    if (now - handled_sensor_data.attitude_timestamp > dt_limit ||
-        now - handled_sensor_data.pos_timestamp > dt_limit ||
-        now - handled_sensor_data.vel_timestamp > dt_limit) {
-        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs not up to date");
+    if (unit_status == 0xFFFF) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs hardware error");
+        return false;
+    }
+    static const struct {
+        uint16_t mask;
+        const char *reason;
+    } unit_status_failures[] {
+        { USW::INITIAL_ALIGNMENT_FAIL, "alignment failed" },
+        { USW::OPERATION_FAIL, "NaN/INF in solution" },
+        { USW::GYRO_FAIL, "gyroscope failure" },
+        { USW::ACCEL_FAIL, "accelerometer failure" },
+        { USW::MAG_FAIL, "magnetometer failure" },
+        { USW::ELECTRONICS_FAIL, "electronics failure" },
+        { USW::GNSS_FAIL, "GNSS receiver failure" },
+    };
+    for (const auto &failure : unit_status_failures) {
+        if ((unit_status & failure.mask) != 0) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs %s", failure.reason);
+            return false;
+        }
+    }
+    if ((unit_status2 & USW2::ADU_BARO_FAIL) != 0) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs barometer failure");
+        return false;
+    }
+    if ((unit_status2 & USW2::ADU_DIFF_PRESS_FAIL) != 0) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs diff pressure failure");
+        return false;
+    }
+    if (ins_sol_status == InsSolution::INVALID) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs solution invalid");
+        return false;
+    }
+    const bool uses_ins_navigation = AP::ahrs().configured_ekf_type() == AP_AHRS::EKFType::EXTERNAL ||
+                                     AP::externalAHRS().has_sensor(AP_ExternalAHRS::AvailableSensor::GPS);
+    if (uses_ins_navigation) {
+        const char *reason = nullptr;
+
+        if (ins_sol_status == InsSolution::GNSS_ABSENCE) {
+            reason = "no GNSS or aiding yet";
+        } else if (ins_sol_status == InsSolution::NO_HEADING_CORRECTION && (unit_status2 & USW2::GNSS_POS_VALID) != 0) {
+            reason = "no heading, bad GNSS";
+        } else if (ins_sol_status == InsSolution::AUTONOMOUS_TIME_EXCEEDED) {
+            reason = "pos/vel frozen";
+        }
+
+        if (reason != nullptr) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs %s", reason);
+            return false;
+        }
+    }
+    if (!healthy()) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "InertialLabs no attitude data");
         return false;
     }
     return true;

@@ -200,6 +200,7 @@ enum USW2 {
     GNSS_FUSION_OFF = 1U << 7,
     DIFF_PRESS_FUSION_OFF = 1U << 8,
     GNSS_POS_VALID = 1U << 10,
+    GNSS_SPOOFING = 1U << 14,
 };
 
 // Air Data Status bits
