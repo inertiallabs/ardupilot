@@ -306,10 +306,12 @@ bool Sensor::parse_udd_payload()
             }
             case DataType::KF_VEL_COVARIANCE: {
                 _sensors_data.ins.kf_vel_covariance = udd.kf_vel_covariance.tofloat().rfu_to_frd(); // NED, in mm/s
+                message_length = sizeof(udd.kf_vel_covariance);
                 break;
             }
             case DataType::KF_POS_COVARIANCE: {
                 _sensors_data.ins.kf_pos_covariance = udd.kf_pos_covariance.tofloat(); // NED, in mm
+                message_length = sizeof(udd.kf_pos_covariance);
                 break;
             }
             case DataType::UNIT_STATUS: {
