@@ -176,7 +176,7 @@ bool AP_ExternalAHRS_InertialLabs::pre_arm_check(char *failure_msg, uint8_t fail
 
         if (ins_sol_status == InsSolution::GNSS_ABSENCE) {
             reason = "no GNSS or aiding yet";
-        } else if (ins_sol_status == InsSolution::NO_HEADING_CORRECTION && (unit_status2 & USW2::GNSS_POS_VALID) != 0) {
+        } else if (ins_sol_status == InsSolution::NO_HEADING_CORRECTION && (unit_status2 & USW2::GNSS_POS_INVALID) != 0) {
             reason = "no heading, bad GNSS";
         } else if (ins_sol_status == InsSolution::AUTONOMOUS_TIME_EXCEEDED) {
             reason = "pos/vel frozen";

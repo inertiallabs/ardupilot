@@ -47,7 +47,7 @@ const StatusMessage usw2_message_list[] = {
 	{ MAG_AUTO_CAL_3D_RUNTIME, MAV_SEVERITY_INFO,     "Automatic 3D calibration is in progress", "Automatic 3D calibration is stopped" },
 	{ GNSS_FUSION_OFF,         MAV_SEVERITY_INFO,     "GNSS input switched off",                 "GNSS input switched on"              },
 	{ DIFF_PRESS_FUSION_OFF,   MAV_SEVERITY_INFO,     "Diff. pressure input switched off",       "Diff. pressure input switched on"    },
-	{ GNSS_POS_VALID,          MAV_SEVERITY_INFO,     "Incorrect GNSS position",                 "GNSS position is correct"            }
+	{ GNSS_POS_INVALID,        MAV_SEVERITY_INFO,     "Incorrect GNSS position",                 "GNSS position is correct"            }
 };
 
 const StatusMessage adu_message_list[] = {
